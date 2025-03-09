@@ -1,0 +1,54 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ユーザーセッション
+model UserSession {
+  id          String   @id @default(cuid())
+  userId      String   @unique  // Blueskyのユーザーid
+  identifier  String   // Blueskyのユーザー識別子 (handle)
+  appPassword String   // Blueskyのアプリパスワード
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  scheduledPosts ScheduledPost[]
+
+  @@index([userId])
+}
+
+// 予約投稿
+model ScheduledPost {
+  id          String   @id @default(cuid())
+  userId      String
+  content     Json     // PostContentSchemaに基づくJSON
+  scheduledAt DateTime
+  status      String   // PENDING, PUBLISHED, FAILED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  userSession UserSession  @relation(fields: [userId], references: [userId])
+  failureLogs FailureLog[]
+
+  @@index([userId])
+  @@index([scheduledAt, status])
+}
+
+// 投稿失敗ログ
+model FailureLog {
+  id             String   @id @default(cuid())
+  scheduledPost  ScheduledPost @relation(fields: [scheduledPostId], references: [id])
+  scheduledPostId String
+  error          String   @db.Text
+  createdAt      DateTime @default(now())
+
+  @@index([scheduledPostId])
+}

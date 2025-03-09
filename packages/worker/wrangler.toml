@@ -1,0 +1,17 @@
+name = "chronopost-worker"
+main = "src/index.ts"
+compatibility_date = "2024-03-09"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "chronopost"
+database_id = "placeholder-id"
+
+# Variable bindings
+[vars]
+BLUESKY_SERVICE = "https://bsky.social"
+
+# Cron Triggers
+[triggers]
+crons = ["* * * * *"] # 毎分実行

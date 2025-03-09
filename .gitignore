@@ -1,0 +1,52 @@
+# Dependencies
+node_modules
+.pnpm-store/
+
+# Build
+dist
+build
+.output
+.build
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Cloudflare Workers
+.wrangler
+.dev.vars
+
+# Prisma
+prisma/migrations/
+*.db
+*.db-journal
+
+# Testing
+coverage
+.nyc_output
+
+# Turbo
+.turbo
+
+# Cache
+.cache
+.temp
