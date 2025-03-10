@@ -1,29 +1,31 @@
 {
   "name": "@chronopost/api",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "wrangler build",
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler publish src/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:debug": "NODE_ENV=test DEBUG=vitest* VITEST_LOG_LEVEL=debug vitest run --reporter=verbose",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@atproto/api": "^0.9.6",
     "@chronopost/database": "workspace:*",
     "@chronopost/shared": "workspace:*",
-    "@atproto/api": "^0.9.6",
-    "@hono/zod-validator": "^0.2.0",
-    "hono": "^4.0.0",
+    "@hono/zod-validator": "^0.1.11",
+    "hono": "^3.12.6",
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.0.0",
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "wrangler": "^3.0.0",
-    "vitest": "^1.0.0",
-    "@vitest/coverage-v8": "^1.0.0",
-    "msw": "^2.0.0"
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "@vitest/coverage-v8": "^1.2.2",
+    "@vitest/ui": "^1.2.2",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.2",
+    "wrangler": "^3.25.0"
   }
 }
