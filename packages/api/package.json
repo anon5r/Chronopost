@@ -17,7 +17,7 @@
     "@chronopost/database": "workspace:*",
     "@chronopost/shared": "workspace:*",
     "@hono/zod-validator": "^0.1.11",
-    "hono": "^3.12.12",
+    "hono": "^4.6.5",
     "zod": "^3.24.2"
   },
   "devDependencies": {
