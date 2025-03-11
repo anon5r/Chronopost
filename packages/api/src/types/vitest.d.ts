@@ -12,9 +12,9 @@ declare module 'vitest' {
 }
 
 // APIレスポンス型
-export interface SuccessResponse {
+export interface SuccessResponse<T = any> {
   success: true;
-  data: any;
+  data: T;
 }
 
 export interface ErrorResponse {

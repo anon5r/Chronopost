@@ -6,9 +6,25 @@ const config: UserConfig = {
   test: {
     globals: true,
     environment: 'node',
-    setupFiles: ['./vitest.setup.ts'],
+    setupFiles: ['./vitest.setup.ts', './__tests__/setup/index.ts'],
     include: ['__tests__/**/*.test.ts'],
     reporters: ['default', 'verbose'],
+    logHeapUsage: true,
+    testTimeout: 20000,
+    hookTimeout: 15000,
+    environmentOptions: {
+      env: { NODE_ENV: 'test' }
+    },
+    maxConcurrency: 1,
+    passWithNoTests: false,
+    allowOnly: true,
+    isolate: false,
+    bail: 1,
+    onConsoleLog: (log) => {
+      // テストの実行中の全てのログを表示
+      process.stdout.write(`[LOG] ${log}\n`);
+      return false;
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -17,20 +33,18 @@ const config: UserConfig = {
       all: true,
       clean: true
     },
-    testTimeout: 15000,
-    hookTimeout: 15000,
     restoreMocks: true,
     clearMocks: true,
     mockReset: true,
-    isolate: false,  // これを変更
     sequence: {
       concurrent: false,
       shuffle: false
     },
-    pool: 'forks',  // threadsからforksに変更
+    pool: 'threads',
     poolOptions: {
-      forks: {
-        isolate: false
+      threads: {
+        minThreads: 1,
+        maxThreads: 1
       }
     }
   },

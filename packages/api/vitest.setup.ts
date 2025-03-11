@@ -44,23 +44,41 @@ try {
 // カスタムマッチャーの定義
 expect.extend({
   toBeSuccessResponse(received: any) {
-    const pass = received?.success === true && typeof received?.data !== 'undefined';
-    return {
-      pass,
-      message: () =>
-        pass
-          ? `期待された成功レスポンス: ${JSON.stringify(received)}`
-          : `期待された成功レスポンスではありません: ${JSON.stringify(received)}`
-    };
+    const pass = received?.success === true && 
+                 typeof received?.data !== 'undefined' &&
+                 Object.keys(received).length === 2;  // success と data のみ
+    if (pass) {
+      return {
+        pass: true,
+        message: () => `期待された成功レスポンス: ${JSON.stringify(received, null, 2)}`
+      };
+    } else {
+      return {
+        pass: false,
+        message: () => 
+          `期待された成功レスポンスではありません:\n` +
+          `受け取ったレスポンス: ${JSON.stringify(received, null, 2)}\n` +
+          `期待される形式: { success: true, data: any }`
+      };
+    }
   },
   toBeErrorResponse(received: any) {
-    const pass = received?.success === false && typeof received?.error !== 'undefined';
-    return {
-      pass,
-      message: () =>
-        pass
-          ? `期待されたエラーレスポンス: ${JSON.stringify(received)}`
-          : `期待されたエラーレスポンスではありません: ${JSON.stringify(received)}`
-    };
+    const pass = received?.success === false && 
+                 typeof received?.error === 'string' &&
+                 Object.keys(received).length === 2;  // success と error のみ
+    if (pass) {
+      return {
+        pass: true,
+        message: () => `期待されたエラーレスポンス: ${JSON.stringify(received, null, 2)}`
+      };
+    } else {
+      return {
+        pass: false,
+        message: () => 
+          `期待されたエラーレスポンスではありません:\n` +
+          `受け取ったレスポンス: ${JSON.stringify(received, null, 2)}\n` +
+          `期待される形式: { success: false, error: string }`
+      };
+    }
   }
 });

@@ -23,8 +23,8 @@ export const createDbMock = () => ({
 export const createBlueskyMock = () => {
   const mockLogin = vi.fn().mockImplementation(async (opts: AtpAgentLoginOpts) => ({
     data: {
-      did: 'did:plc:test',
-      handle: 'test.bsky.social'
+      did: 'did:plc:iu37zbfh4w6ap3di4mqeng4r',
+      handle: 'chronopost.bsky.social'
     }
   }));
 

@@ -5,11 +5,15 @@
   "scripts": {
     "dev": "wrangler dev src/index.ts",
     "deploy": "wrangler publish src/index.ts",
-    "test": "vitest run",
+    "test": "vitest run --reporter=verbose",
     "test:watch": "vitest watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:debug": "NODE_ENV=test DEBUG=vitest* VITEST_LOG_LEVEL=debug vitest run --reporter=verbose",
+    "test:single": "NODE_ENV=test vitest run --pool=threads --reporter=verbose",
+    "test:debug:auth": "FORCE_COLOR=1 NODE_ENV=test DEBUG=test:*,vitest:* VITEST_LOG_LEVEL=debug vitest run __tests__/routes/auth.test.ts --mode=development --reporter=verbose --no-file-parallelism --logHeapUsage --no-coverage 2>&1 | tee auth-test.log",
+    "test:min": "NODE_ENV=test FORCE_COLOR=1 vitest run __tests__/minimal.test.ts --reporter=verbose --no-file-parallelism | tee test.log",
+    "test:auth-simple": "NODE_ENV=test DEBUG=vitest:* VITEST_LOG_LEVEL=debug FORCE_COLOR=1 vitest run __tests__/routes/auth-simple.test.ts --reporter=verbose --no-file-parallelism --mode=development 2>&1 | tee test.log",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

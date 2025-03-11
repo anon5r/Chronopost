@@ -6,10 +6,12 @@ export interface Bindings {
   DB: D1Database;
   JWT_SECRET: string;
   BLUESKY_SERVICE: string;
+  [key: string]: string | D1Database;  // インデックスシグネチャを追加
 }
 
 export interface Variables {
   userId: string;
+  [key: string]: string;  // インデックスシグネチャを追加
 }
 
 export interface HonoEnv {

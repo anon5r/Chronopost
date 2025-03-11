@@ -50,3 +50,5 @@ coverage
 # Cache
 .cache
 .temp
+
+*-output.txt

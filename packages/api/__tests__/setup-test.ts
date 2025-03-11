@@ -59,23 +59,36 @@ export const createTestEnv = (): HonoEnv => ({
 
 // テスト用のBlueskyエージェントモック
 export const createBskyAgentMock = () => {
-  const mockAgentInstance = {
-    service: 'https://bsky.social',
-    login: vi.fn().mockImplementation(async () => ({
-      data: {
-        did: 'did:plc:test',
-        handle: 'test.bsky.social',
-        accessJwt: 'test-access-jwt',
-        refreshJwt: 'test-refresh-jwt'
-      }
-    }))
-  };
+  const mockLogin = vi.fn().mockResolvedValue({
+    data: {
+      did: 'did:plc:test',
+      handle: 'test.bsky.social',
+      accessJwt: 'test-access-jwt',
+      refreshJwt: 'test-refresh-jwt'
+    }
+  });
 
-  const MockBskyAgent = vi.fn().mockImplementation(() => mockAgentInstance);
+  class MockBskyAgent {
+    service: string;
+    login: typeof mockLogin;
+
+    constructor(opts: { service: string }) {
+      this.service = opts.service;
+      this.login = mockLogin;
+    }
+  }
+
+  const mockedClass = vi.fn().mockImplementation((opts: { service: string }) => {
+    return new MockBskyAgent(opts);
+  });
 
   return {
-    MockBskyAgent,
-    mockAgentInstance
+    MockBskyAgent: mockedClass,
+    mockLogin,
+    mockAgentInstance: {
+      service: 'https://bsky.social',
+      login: mockLogin
+    }
   };
 };
 
