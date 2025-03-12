@@ -40,15 +40,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Build packages
+        run: pnpm -r build
+
       - name: Run tests
         run: pnpm -r test
         env:
           NODE_ENV: test
           VITEST_LOG_LEVEL: verbose
           DEBUG: vitest:*
+          TEST_BSKY_PASSWORD: ${{ secrets.TEST_BSKY_PASSWORD }}
+          TEST_BSKY_DID: ${{ secrets.TEST_BSKY_DID }}
+          TEST_BSKY_HANDLE: ${{ secrets.TEST_BSKY_HANDLE }}
+          BSKY_SERVICE: https://bsky.social
 
       - name: Generate coverage report
         run: pnpm -F @chronopost/api test:coverage
+        env:
+          TEST_BSKY_PASSWORD: ${{ secrets.TEST_BSKY_PASSWORD }}
+          TEST_BSKY_DID: ${{ secrets.TEST_BSKY_DID }}
+          TEST_BSKY_HANDLE: ${{ secrets.TEST_BSKY_HANDLE }}
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

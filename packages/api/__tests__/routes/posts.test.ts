@@ -4,13 +4,39 @@ import type { HonoEnv, ScheduledPost } from '../../src/types';
 import { ScheduledPostStatus } from '../../src/types';
 import type { SuccessResponse, ErrorResponse } from '../../src/types/vitest';
 import type { Mock } from 'vitest';
-import { 
-  createMockDb, 
-  createTestEnv, 
-  createAuthMocks,
-  createTestRequest,
-  parseJson
-} from '../setup-test';
+
+// モックDBヘルパー関数の実装
+const createMockDb = () => ({
+  userSession: {
+    upsert: vi.fn(),
+    findUnique: vi.fn()
+  },
+  scheduledPost: {
+    create: vi.fn(),
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn()
+  },
+  getScheduledPostCount: vi.fn(),
+  getScheduledPostsAt: vi.fn(),
+  logFailure: vi.fn(),
+  markAsPublished: vi.fn()
+});
+
+// 認証ミドルウェアのモック作成
+const createAuthMocks = () => ({
+  authMiddleware: vi.fn().mockImplementation(async (c, next) => {
+    c.set('userId', 'test-user-id');
+    return next();
+  }),
+  validatePostOwnershipMiddleware: vi.fn().mockImplementation(async (c, next) => {
+    return next();
+  }),
+  validateScheduledPostMiddleware: vi.fn().mockImplementation(async (c, next) => {
+    return next();
+  })
+});
 
 // モック変数を初期化とともに宣言
 // モジュールのモック定義
@@ -45,6 +71,7 @@ vi.mock('../../src/middleware/auth', () => {
 // モジュールのインポート
 import posts from '../../src/routes/posts';
 import { db } from '@chronopost/database';
+
 
 describe('投稿ルート', () => {
   let app: Hono<HonoEnv>;

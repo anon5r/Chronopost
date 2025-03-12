@@ -15,6 +15,9 @@ const config: UserConfig = {
     environmentOptions: {
       env: { NODE_ENV: 'test' }
     },
+    env: {
+      configFile: '.env',
+    },
     maxConcurrency: 1,
     passWithNoTests: false,
     allowOnly: true,
@@ -50,7 +53,9 @@ const config: UserConfig = {
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src')
+      '@': resolve(__dirname, './src'),
+      '@chronopost/database': resolve(__dirname, '../database/src/index.ts'),
+      '@chronopost/shared': resolve(__dirname, '../shared/src/index.ts')
     }
   }
 };

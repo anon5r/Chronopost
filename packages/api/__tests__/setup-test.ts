@@ -1,27 +1,28 @@
 import { afterEach, beforeEach, vi } from 'vitest';
-import { Hono } from 'hono/tiny';
-import type { Context, Next } from 'hono';
-import type { HonoEnv } from '../src/types';
-import type { Mock } from 'vitest';
+import { HonoEnv } from '../src/types';
+import { Context, Next } from 'hono';
 
-// 共通のモックオブジェクト
-export const createMockDb = () => ({
-  userSession: {
-    upsert: vi.fn(),
-    findUnique: vi.fn()
-  },
-  scheduledPost: {
-    create: vi.fn(),
-    findMany: vi.fn(),
-    findUnique: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn()
-  },
-  getScheduledPostCount: vi.fn(),
-  getScheduledPostsAt: vi.fn(),
-  logFailure: vi.fn(),
-  markAsPublished: vi.fn()
-});
+// データベースモックを明示的に定義
+vi.mock('@chronopost/database', () => ({
+  db: {
+    userSession: {
+      upsert: vi.fn(),
+      findUnique: vi.fn()
+    },
+    scheduledPost: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn()
+    },
+    getScheduledPostCount: vi.fn(),
+    getScheduledPostsAt: vi.fn(),
+    logFailure: vi.fn(),
+    markAsPublished: vi.fn()
+  }
+}));
+
 
 // 認証ミドルウェアのモック
 export const createAuthMocks = () => {
