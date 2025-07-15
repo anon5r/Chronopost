@@ -1,19 +1,22 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2021",
-    "module": "ES2022",
-    "lib": ["ES2021"],
-    "types": ["@cloudflare/workers-types"],
-    "outDir": "dist",
+    "target": "ES2020",
+    "module": "ESNext",
     "moduleResolution": "node",
+    "esModuleInterop": true,
     "strict": true,
-    "allowJs": true,
-    "noEmit": true,
-    "isolatedModules": true,
-    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "types": ["node"],
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
