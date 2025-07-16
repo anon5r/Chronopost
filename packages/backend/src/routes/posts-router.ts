@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { PostService } from '../services/bluesky/post-service';
 import { CreatePostSchema, UpdatePostSchema } from 'shared';
+import type { User } from '../services/oauth/session-manager';
 
 // Create a router instance
 const router = new Hono();
@@ -19,7 +20,7 @@ export function setupPostsRouter(postService: PostService) {
   router.post('/', zValidator('json', CreatePostSchema), async c => {
     try {
       // Get user from context (set by auth middleware)
-      const user = c.get('user');
+      const user = c.get('user') as User | undefined;
       if (!user) {
         return c.json(
           {
@@ -59,7 +60,7 @@ export function setupPostsRouter(postService: PostService) {
   router.get('/', async c => {
     try {
       // Get user from context (set by auth middleware)
-      const user = c.get('user');
+      const user = c.get('user') as User | undefined;
       if (!user) {
         return c.json(
           {
@@ -106,7 +107,7 @@ export function setupPostsRouter(postService: PostService) {
   router.get('/:id', async c => {
     try {
       // Get user from context (set by auth middleware)
-      const user = c.get('user');
+      const user = c.get('user') as User | undefined;
       if (!user) {
         return c.json(
           {
@@ -158,7 +159,7 @@ export function setupPostsRouter(postService: PostService) {
   router.put('/:id', zValidator('json', UpdatePostSchema), async c => {
     try {
       // Get user from context (set by auth middleware)
-      const user = c.get('user');
+      const user = c.get('user') as User | undefined;
       if (!user) {
         return c.json(
           {
@@ -174,7 +175,13 @@ export function setupPostsRouter(postService: PostService) {
       const postId = c.req.param('id');
 
       // Get validated request body
-      const updateData = await c.req.valid('json');
+      const rawUpdateData = await c.req.valid('json');
+
+      // Create a clean update object without undefined values
+      const updateData = {
+        ...(rawUpdateData.content !== undefined && { content: rawUpdateData.content }),
+        ...(rawUpdateData.scheduledAt !== undefined && { scheduledAt: rawUpdateData.scheduledAt })
+      };
 
       // Update the post
       const post = await postService.updateScheduledPost(postId, user.id, updateData);
@@ -224,7 +231,7 @@ export function setupPostsRouter(postService: PostService) {
   router.delete('/:id', async c => {
     try {
       // Get user from context (set by auth middleware)
-      const user = c.get('user');
+      const user = c.get('user') as User | undefined;
       if (!user) {
         return c.json(
           {

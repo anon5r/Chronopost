@@ -35,7 +35,7 @@ export class PostService {
     }
 
     // Create the post
-    return prisma.scheduledPost.create({
+    const post = await prisma.scheduledPost.create({
       data: {
         userId,
         content,
@@ -44,6 +44,9 @@ export class PostService {
         retryCount: 0,
       },
     });
+
+    // Convert Prisma type to ScheduledPost type
+    return post as unknown as ScheduledPost;
   }
 
   /**
@@ -66,7 +69,7 @@ export class PostService {
       throw new Error('Unauthorized access to post');
     }
 
-    return post;
+    return post as unknown as ScheduledPost;
   }
 
   /**
@@ -98,10 +101,12 @@ export class PostService {
     }
 
     // Update the post
-    return prisma.scheduledPost.update({
+    const updatedPost = await prisma.scheduledPost.update({
       where: { id: postId },
       data,
     });
+
+    return updatedPost as unknown as ScheduledPost;
   }
 
   /**
@@ -120,12 +125,14 @@ export class PostService {
     }
 
     // Delete the post
-    return prisma.scheduledPost.update({
+    const deletedPost = await prisma.scheduledPost.update({
       where: { id: postId },
       data: {
         status: 'CANCELLED',
       },
     });
+
+    return deletedPost as unknown as ScheduledPost;
   }
 
   /**
@@ -167,7 +174,7 @@ export class PostService {
     ]);
 
     return {
-      posts,
+      posts: posts as unknown as ScheduledPost[],
       total,
       page,
       limit,
@@ -202,10 +209,10 @@ export class PostService {
 
     try {
       // Create the post on Bluesky
-      const result = await this.apiClient.createPost(post.userId, post);
+      const result = await this.apiClient.createPost(post.userId, post as unknown as ScheduledPost);
 
       // Update with success status
-      return prisma.scheduledPost.update({
+      const updatedPost = await prisma.scheduledPost.update({
         where: { id: postId },
         data: {
           status: 'COMPLETED',
@@ -214,6 +221,8 @@ export class PostService {
           blueskyRkey: result.uri.split('/').pop() || '',
         },
       });
+
+      return updatedPost as unknown as ScheduledPost;
     } catch (error) {
       console.error(`Failed to execute post ${postId}:`, error);
 
@@ -222,7 +231,7 @@ export class PostService {
       const maxRetries = 3;
 
       // Update with failure status
-      return prisma.scheduledPost.update({
+      const failedPost = await prisma.scheduledPost.update({
         where: { id: postId },
         data: {
           status: retryCount >= maxRetries ? 'FAILED' : 'PENDING',
@@ -230,6 +239,8 @@ export class PostService {
           errorMsg: error instanceof Error ? error.message : String(error),
         },
       });
+
+      return failedPost as unknown as ScheduledPost;
     }
   }
 
@@ -240,7 +251,7 @@ export class PostService {
   async getPendingPostsDueForExecution(): Promise<ScheduledPost[]> {
     const now = new Date();
 
-    return prisma.scheduledPost.findMany({
+    const posts = await prisma.scheduledPost.findMany({
       where: {
         status: 'PENDING',
         scheduledAt: { lte: now },
@@ -248,5 +259,7 @@ export class PostService {
       orderBy: { scheduledAt: 'asc' },
       take: 100, // Process in batches
     });
+
+    return posts as unknown as ScheduledPost[];
   }
 }

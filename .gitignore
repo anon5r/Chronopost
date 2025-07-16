@@ -12,6 +12,8 @@ out/
 src/**/*.js
 *.d.ts
 *.js.map
+!custom-types.d.ts
+!packages/**/types/**/*.d.ts
 
 # Runtime data
 pids

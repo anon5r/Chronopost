@@ -19,7 +19,7 @@ import { rateLimiter } from 'hono-rate-limiter';
  * CORS設定 - OAuth認証とフロントエンド連携用
  */
 export const corsConfig = cors({
-  origin: (origin, c) => {
+  origin: (origin) => {
     // 本番環境では厳密なドメイン制限
     const allowedOrigins = [
       process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -71,20 +71,15 @@ export const securityHeaders = secureHeaders({
   crossOriginEmbedderPolicy: false, // OAuth認証で必要
   crossOriginOpenerPolicy: 'same-origin-allow-popups', // OAuth認証で必要
   crossOriginResourcePolicy: 'cross-origin',
-  dnsPrefetchControl: { allow: false },
-  frameguard: { action: 'deny' },
-  hidePoweredBy: true,
-  hsts: {
-    maxAge: 31536000, // 1年
-    includeSubDomains: true,
-    preload: true,
-  },
-  ieNoOpen: true,
-  noSniff: true,
+  xDnsPrefetchControl: false,
+  xFrameOptions: 'DENY',
+  strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload;',
+  xDownloadOptions: true,
+  xContentTypeOptions: true,
   originAgentCluster: true,
-  permittedCrossDomainPolicies: false,
+  xPermittedCrossDomainPolicies: false,
   referrerPolicy: 'strict-origin-when-cross-origin',
-  xssFilter: true,
+  xXssProtection: true,
 });
 
 /**

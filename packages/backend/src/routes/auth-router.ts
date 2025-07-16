@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import { z } from 'zod';
 import { getCookie, setCookie } from 'hono/cookie';
 import { OAuthClient } from '../services/oauth/oauth-client';
 import { OAuthCallbackSchema } from 'shared';
+import type { User } from '../services/oauth/session-manager';
 
 // Create a router instance
 const router = new Hono();
@@ -127,7 +127,7 @@ export function setupAuthRouter(oauthClient: OAuthClient) {
       const user = await sessionManager.createOrUpdateUser({
         did: userInfo.did,
         handle: userInfo.handle,
-        displayName: userInfo.displayName,
+        displayName: userInfo.displayName || '',
       });
 
       // Store tokens in the database
@@ -176,7 +176,7 @@ export function setupAuthRouter(oauthClient: OAuthClient) {
   router.post('/logout', async c => {
     try {
       // Get the session ID from cookies or header
-      const sessionId = c.req.cookie('session_id') || c.req.header('X-Session-ID');
+      const sessionId = getCookie(c, 'session_id') || c.req.header('X-Session-ID');
 
       if (!sessionId) {
         return c.json(
@@ -218,7 +218,7 @@ export function setupAuthRouter(oauthClient: OAuthClient) {
   router.get('/profile', async c => {
     try {
       // Get user from context (set by auth middleware)
-      const user = c.get('user');
+      const user = c.get('user') as User | undefined;
       if (!user) {
         return c.json(
           {
@@ -236,7 +236,7 @@ export function setupAuthRouter(oauthClient: OAuthClient) {
           id: user.id,
           did: user.did,
           handle: user.handle,
-          displayName: user.displayName,
+          displayName: user.displayName || '',
         },
       });
     } catch (error) {

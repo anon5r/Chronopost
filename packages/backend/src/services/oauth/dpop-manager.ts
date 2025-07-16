@@ -21,7 +21,10 @@ export class DPoPManager {
     const privateKey = await jose.exportJWK(keyPair.privateKey);
     const publicKey = await jose.exportJWK(keyPair.publicKey);
 
-    return { privateKey, publicKey };
+    return { 
+      privateKey: privateKey as unknown as JsonWebKey, 
+      publicKey: publicKey as unknown as JsonWebKey 
+    };
   }
 
   /**
@@ -65,7 +68,7 @@ export class DPoPManager {
     }
 
     // Create the DPoP proof JWT
-    const dPoPProof = await new jose.SignJWT(payload)
+    const dPoPProof = await new jose.SignJWT(payload as unknown as jose.JWTPayload)
       .setProtectedHeader({
         alg: 'ES256',
         typ: 'dpop+jwt',
@@ -93,7 +96,8 @@ export class DPoPManager {
     try {
       // Decode the JWT header to extract the public key
       const { header } = jose.decodeJwt(proof);
-      const jwk = header.jwk as JsonWebKey;
+      const typedHeader = header as { jwk?: JsonWebKey; typ?: string };
+      const jwk = typedHeader.jwk as JsonWebKey;
 
       if (!jwk) {
         throw new Error('No JWK found in DPoP proof header');
@@ -106,7 +110,7 @@ export class DPoPManager {
       const { payload } = await jose.jwtVerify(proof, publicKey);
 
       // Check the JWT type
-      if (header.typ !== 'dpop+jwt') {
+      if (typedHeader.typ !== 'dpop+jwt') {
         throw new Error('Invalid token type');
       }
 
@@ -142,7 +146,8 @@ export class DPoPManager {
     try {
       // Decode the JWT header to extract the public key
       const { header } = jose.decodeJwt(proof);
-      const jwk = header.jwk as JsonWebKey;
+      const typedHeader = header as { jwk?: JsonWebKey };
+      const jwk = typedHeader.jwk as JsonWebKey;
 
       if (!jwk) {
         throw new Error('No JWK found in DPoP proof header');

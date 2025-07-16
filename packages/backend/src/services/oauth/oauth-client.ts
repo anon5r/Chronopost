@@ -6,12 +6,8 @@ import type {
   OAuthConfig,
   PKCECodes,
   OAuthToken,
-  OAuthState,
-  ClientMetadata,
   JsonWebKey,
 } from 'shared';
-
-import { DEFAULT_CLIENT_METADATA, BLUESKY_OAUTH_ENDPOINTS } from 'shared';
 
 /**
  * OAuthClient class - Handles OAuth authentication with Bluesky
@@ -141,7 +137,12 @@ export class OAuthClient {
       throw new Error(`Token request failed: ${response.status} ${JSON.stringify(errorData)}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as {
+      access_token: string;
+      refresh_token: string;
+      expires_in: number;
+      scope: string;
+    };
 
     // Format token response
     const tokens: OAuthToken = {
@@ -197,7 +198,12 @@ export class OAuthClient {
       );
     }
 
-    const data = await response.json();
+    const data = await response.json() as {
+      access_token: string;
+      refresh_token: string;
+      expires_in: number;
+      scope: string;
+    };
 
     // Format token response
     const tokens: OAuthToken = {
@@ -244,7 +250,11 @@ export class OAuthClient {
       throw new Error(`Get user info failed: ${response.status} ${JSON.stringify(errorData)}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as {
+      did: string;
+      handle: string;
+      displayName?: string;
+    };
 
     return {
       did: data.did,

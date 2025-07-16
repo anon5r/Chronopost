@@ -76,7 +76,7 @@ export class BlueskyApiClient {
     const response = await fetch(url, options);
 
     // Check if the response has a DPoP-Nonce header for the next request
-    const dPopNonce = response.headers.get('DPoP-Nonce');
+    // const dPopNonce = response.headers.get('DPoP-Nonce');
     // TODO: Store the nonce for future requests if needed
 
     // Handle errors
@@ -112,10 +112,10 @@ export class BlueskyApiClient {
    * @returns New tokens
    */
   private async refreshToken(
-    userId: string,
-    sessionId: string,
-    refreshToken: string,
-    dPopPrivateKey: JsonWebKey
+    _userId: string,
+    _sessionId: string,
+    _refreshToken: string,
+    _dPopPrivateKey: JsonWebKey
   ): Promise<{
     accessToken: string;
     dPopPrivateKey: JsonWebKey;
@@ -168,11 +168,10 @@ export class BlueskyApiClient {
     const endpoint = '/xrpc/com.atproto.repo.getRecord';
     const [repoName, collection, rkey] = uri.replace('at://', '').split('/');
 
-    const params = new URLSearchParams({
-      repo: repoName,
-      collection,
-      rkey,
-    });
+    const params = new URLSearchParams();
+    if (repoName) params.append('repo', repoName);
+    if (collection) params.append('collection', collection);
+    if (rkey) params.append('rkey', rkey);
 
     return this.makeRequest(`${endpoint}?${params.toString()}`, 'GET', userId);
   }
