@@ -1,0 +1,510 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  # OpenAI GPT-4 Code Review
+  openai-review:
+    name: OpenAI Code Review
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Check OpenAI API Key
+        id: check-openai
+        run: |
+          if [ -z "${{ secrets.OPENAI_API_KEY }}" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⚠️ OpenAI API key not configured, skipping review"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "✅ OpenAI API key configured"
+          fi
+
+      - name: Checkout code
+        if: steps.check-openai.outputs.skip == 'false'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: OpenAI PR Reviewer
+        if: steps.check-openai.outputs.skip == 'false'
+        uses: coderabbitai/ai-pr-reviewer@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          debug: false
+          review_simple_changes: false
+          review_comment_lgtm: false
+          openai_light_model: gpt-4o-mini
+          openai_heavy_model: gpt-4o
+          openai_timeout_ms: 120000
+          language: ja-JP
+          path_filters: |
+            !dist/**
+            !build/**
+            !node_modules/**
+            !coverage/**
+            !*.lock
+            !*.log
+          system_message: |
+            あなたはBluesky OAuth統合プロジェクトのコードレビューを行う専門のTypeScript/Node.js開発者です。
+            日本語でレビューコメントを提供してください。
+            
+            重点的にチェックする項目：
+            1. セキュリティ脆弱性、特にOAuth/DPoP実装について
+            2. TypeScript型安全性と適切なエラーハンドリング
+            3. パフォーマンス問題とメモリリーク
+            4. プロジェクトのコーディング規約への準拠（CLAUDE.md参照）
+            5. データベースクエリの最適化とPrismaベストプラクティス
+            6. API設計とエラーレスポンス
+            7. 認証フローの正確性
+            8. async/awaitとPromiseの適切な使用
+            
+            無視する項目：
+            - 軽微なスタイル問題（Prettierがフォーマットを処理）
+            - 単純なリネームやリファクタリング
+            - 重大な論理的問題がない限りのテストファイル
+            
+            建設的なフィードバックを具体的な提案とともに日本語で提供してください。
+
+      - name: Skip notification
+        if: steps.check-openai.outputs.skip == 'true'
+        run: echo "🔄 OpenAI review skipped due to missing API key"
+
+  # Anthropic Claude Code Review
+  claude-review:
+    name: Claude Code Review
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Check Claude API Key
+        id: check-claude
+        run: |
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Anthropic API key not configured, skipping review"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "✅ Anthropic API key configured"
+          fi
+
+      - name: Checkout code
+        if: steps.check-claude.outputs.skip == 'false'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        if: steps.check-claude.outputs.skip == 'false'
+        uses: pnpm/action-setup@v4
+        with:
+          version: '10.13'
+
+      - name: Setup Node.js
+        if: steps.check-claude.outputs.skip == 'false'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        if: steps.check-claude.outputs.skip == 'false'
+        run: pnpm install --frozen-lockfile
+
+      - name: Get changed files
+        if: steps.check-claude.outputs.skip == 'false'
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+        with:
+          files: |
+            packages/**/*.ts
+            packages/**/*.tsx
+            *.ts
+            *.js
+          files_ignore: |
+            **/*.test.ts
+            **/*.spec.ts
+            **/dist/**
+            **/node_modules/**
+
+      - name: Claude PR Review
+        if: steps.check-claude.outputs.skip == 'false' && steps.changed-files.outputs.any_changed == 'true'
+        uses: ./github/actions/claude-review
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          changed_files: ${{ steps.changed-files.outputs.all_changed_files }}
+
+      - name: Skip notification
+        if: steps.check-claude.outputs.skip == 'true'
+        run: echo "🔄 Claude review skipped due to missing API key"
+
+  # Google Gemini Code Review
+  gemini-review:
+    name: Gemini Code Review
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Check Gemini API Key
+        id: check-gemini
+        run: |
+          if [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Gemini API key not configured, skipping review"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "✅ Gemini API key configured"
+          fi
+
+      - name: Checkout code
+        if: steps.check-gemini.outputs.skip == 'false'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        if: steps.check-gemini.outputs.skip == 'false'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Gemini dependencies
+        if: steps.check-gemini.outputs.skip == 'false'
+        run: npm install @google/generative-ai
+
+      - name: Get changed files
+        if: steps.check-gemini.outputs.skip == 'false'
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+        with:
+          files: |
+            packages/**/*.ts
+            packages/**/*.tsx
+            *.ts
+            *.js
+          files_ignore: |
+            **/*.test.ts
+            **/*.spec.ts
+            **/dist/**
+            **/node_modules/**
+
+      - name: Gemini PR Review
+        if: steps.check-gemini.outputs.skip == 'false' && steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/github-script@v7
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        with:
+          script: |
+            const { GoogleGenerativeAI } = require('@google/generative-ai');
+            const fs = require('fs');
+            
+            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+            
+            const changedFiles = `${{ steps.changed-files.outputs.all_changed_files }}`.split(' ');
+            let reviewCount = 0;
+            
+            for (const file of changedFiles) {
+              if (!file || file.trim() === '') continue;
+            
+              try {
+                const fileContent = fs.readFileSync(file, 'utf8');
+            
+                const prompt = `
+                あなたはBluesky OAuth統合プロジェクトのコードレビューを行う専門のTypeScript/Node.js開発者です。
+                以下のファイルを日本語でレビューしてください。
+            
+                ファイル名: ${file}
+            
+                重点的にチェックする項目：
+                1. セキュリティ脆弱性、特にOAuth/DPoP実装について
+                2. TypeScript型安全性と適切なエラーハンドリング
+                3. パフォーマンス問題とメモリリーク
+                4. プロジェクトのコーディング規約への準拠
+                5. データベースクエリの最適化とPrismaベストプラクティス
+                6. API設計とエラーレスポンス
+                7. 認証フローの正確性
+                8. async/awaitとPromiseの適切な使用
+            
+                無視する項目：
+                - 軽微なスタイル問題（Prettierがフォーマットを処理）
+                - 単純なリネームやリファクタリング
+                - 重大な論理的問題がない限りのテストファイル
+            
+                建設的なフィードバックを具体的な提案とともに日本語で提供してください。
+                重大な問題がない場合は「このファイルは適切に実装されています」と回答してください。
+            
+                \`\`\`typescript
+                ${fileContent}
+                \`\`\`
+                `;
+            
+                const result = await model.generateContent(prompt);
+                const review = result.response.text();
+            
+                // GitHub PR コメントとして投稿（重大な問題がある場合のみ）
+                if (review && !review.includes('適切に実装されています')) {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.issue.number,
+                    body: `## 🤖 Gemini Code Review - \`${file}\`\n\n${review}`,
+                  });
+                  reviewCount++;
+                }
+            
+              } catch (error) {
+                console.error(`Error reviewing file ${file}:`, error);
+            
+                // エラーを PR コメントとして投稿
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: `## ⚠️ Gemini Review Error\n\nファイル \`${file}\` のレビュー中にエラーが発生しました: ${error.message}`,
+                });
+              }
+            }
+            
+            // 全体的なレビューサマリーを投稿
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 🤖 Gemini Review Summary\n\n${changedFiles.length} ファイルをレビューし、${reviewCount} ファイルで改善提案がありました。`,
+            });
+
+      - name: Skip notification
+        if: steps.check-gemini.outputs.skip == 'true'
+        run: echo "🔄 Gemini review skipped due to missing API key"
+
+  # Security-focused review
+  security-review:
+    name: Security Review
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '10.13'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint security rules
+        run: pnpm run lint:security
+
+      - name: Run Semgrep security analysis
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/typescript
+            p/nodejs
+          generateSarif: true
+
+      - name: Upload Semgrep results to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  # OAuth/DPoP specific review
+  oauth-review:
+    name: OAuth Implementation Review
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.changed_files, 'oauth') || contains(github.event.pull_request.changed_files, 'dpop')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check OAuth implementation
+        run: |
+          echo "🔍 Reviewing OAuth/DPoP implementation..."
+          
+          # Check for common OAuth security issues
+          if grep -r "client_secret" packages/frontend/ 2>/dev/null; then
+            echo "❌ ERROR: Client secret found in frontend code!"
+            exit 1
+          fi
+          
+          # Check for proper DPoP implementation
+          if ! grep -r "ES256" packages/backend/src/services/oauth/ 2>/dev/null; then
+            echo "⚠️ WARNING: ES256 algorithm not found in OAuth service"
+          fi
+          
+          # Check for token encryption
+          if grep -r "accessToken.*:" packages/backend/ 2>/dev/null | grep -v "encrypt"; then
+            echo "⚠️ WARNING: Potential unencrypted token storage"
+          fi
+          
+          echo "✅ OAuth implementation review completed"
+
+      - name: Validate Client Metadata
+        run: |
+          if [ -f "packages/backend/public/.well-known/bluesky-oauth.json" ]; then
+            echo "✅ Client metadata file found"
+            # Validate JSON structure
+            node -e "
+              try {
+                const metadata = require('./packages/backend/public/.well-known/bluesky-oauth.json');
+                const required = ['client_id', 'application_type', 'grant_types', 'response_types'];
+                const missing = required.filter(key => !metadata[key]);
+                if (missing.length > 0) {
+                  console.log('❌ Missing required fields:', missing.join(', '));
+                  process.exit(1);
+                }
+                console.log('✅ Client metadata structure valid');
+              } catch (error) {
+                console.log('⚠️ WARNING: Could not validate client metadata:', error.message);
+              }
+            "
+          else
+            echo "⚠️ WARNING: Client metadata file not found"
+          fi
+
+  # Performance review
+  performance-review:
+    name: Performance Review
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '10.13'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Bundle size analysis
+        run: |
+          if [ -f "packages/shared/package.json" ] && [ -f "packages/backend/package.json" ] && [ -f "packages/frontend/package.json" ]; then
+            pnpm run build || echo "⚠️ Build failed, skipping bundle analysis"
+          
+            # Check backend bundle size
+            if [ -d "packages/backend/dist" ]; then
+              backend_size=$(du -sh packages/backend/dist | cut -f1)
+              echo "📦 Backend bundle size: $backend_size"
+            fi
+          
+            # Check frontend bundle size
+            if [ -d "packages/frontend/build" ]; then
+              frontend_size=$(du -sh packages/frontend/build | cut -f1)
+              echo "📦 Frontend bundle size: $frontend_size"
+            fi
+          else
+            echo "⚠️ Package structure not ready, skipping bundle analysis"
+          fi
+
+      - name: Check for performance anti-patterns
+        run: |
+          echo "🔍 Checking for performance issues..."
+          
+          # Check for inefficient database queries
+          if grep -r "findMany.*include.*include" packages/backend/ 2>/dev/null; then
+            echo "⚠️ WARNING: Potential N+1 query detected"
+          fi
+          
+          # Check for memory leaks
+          if grep -r "setInterval\|setTimeout" packages/backend/ 2>/dev/null | grep -v "clearInterval\|clearTimeout"; then
+            echo "⚠️ WARNING: Potential memory leak - timers without cleanup"
+          fi
+          
+          echo "✅ Performance review completed"
+
+  # Final review summary
+  review-summary:
+    name: Review Summary
+    runs-on: ubuntu-latest
+    needs: [openai-review, claude-review, gemini-review, security-review, oauth-review, performance-review]
+    if: always()
+
+    steps:
+      - name: Create review summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reviews = [
+              { name: 'OpenAI Review', status: '${{ needs.openai-review.result }}' },
+              { name: 'Claude Review', status: '${{ needs.claude-review.result }}' },
+              { name: 'Gemini Review', status: '${{ needs.gemini-review.result }}' },
+              { name: 'Security Review', status: '${{ needs.security-review.result }}' },
+              { name: 'OAuth Review', status: '${{ needs.oauth-review.result }}' },
+              { name: 'Performance Review', status: '${{ needs.performance-review.result }}' }
+            ];
+
+            const completed = reviews.filter(r => r.status !== 'skipped').length;
+            const passed = reviews.filter(r => r.status === 'success').length;
+            const failed = reviews.filter(r => r.status === 'failure').length;
+            const skipped = reviews.filter(r => r.status === 'skipped').length;
+            
+            const summary = `## 🤖 AI Review Summary
+            
+            **Reviews Completed:** ${completed}/${reviews.length}
+            **✅ Passed:** ${passed}
+            **❌ Failed:** ${failed}
+            **⏭️ Skipped:** ${skipped}
+            
+            ### Review Results:
+            ${reviews.map(r => {
+              const icon = r.status === 'success' ? '✅' : 
+                         r.status === 'failure' ? '❌' : 
+                         r.status === 'skipped' ? '⏭️' : '⚠️';
+              return `- ${r.name}: ${icon} ${r.status}`;
+            }).join('\n')}
+            
+            ${failed > 0 ? '\n⚠️ Please address the failing reviews before merging.' : '\n🎉 All completed reviews passed!'}
+            
+            ${skipped > 0 ? '\n💡 **Tip:** Configure API keys to enable skipped reviews:\n- `OPENAI_API_KEY` for OpenAI GPT-4 review\n- `ANTHROPIC_API_KEY` for Claude review\n- `GEMINI_API_KEY` for Gemini review' : ''}
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
