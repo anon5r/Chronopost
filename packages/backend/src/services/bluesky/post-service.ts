@@ -1,6 +1,6 @@
 import { BlueskyApiClient } from './api-client';
 import { prisma } from '../../lib/prisma';
-import type { ScheduledPost, PostStatus } from '../../../shared/src/types';
+import type { ScheduledPost, PostStatus } from 'shared';
 
 /**
  * PostService class - Handles post creation and management

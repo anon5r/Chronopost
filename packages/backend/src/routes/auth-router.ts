@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { getCookie, setCookie } from 'hono/cookie';
 import { OAuthClient } from '../services/oauth/oauth-client';
-import { OAuthCallbackSchema } from '../../shared/src/types';
+import { OAuthCallbackSchema } from 'shared';
 
 // Create a router instance
 const router = new Hono();

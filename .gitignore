@@ -9,6 +9,9 @@ node_modules/
 dist/
 build/
 out/
+src/**/*.js
+*.d.ts
+*.js.map
 
 # Runtime data
 pids
@@ -217,6 +220,8 @@ config/development.json
 .env.vault
 secrets/
 
+# Code analysis
 .qodo
 
+# JetBrains IDEs
 .idea

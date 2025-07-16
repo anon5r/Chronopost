@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma';
-import type { OAuthSession, OAuthState, User } from '../../../shared/src/types';
+import type { OAuthSession, OAuthState, User } from 'shared';
 import { randomBytes } from 'crypto';
 
 /**

@@ -9,9 +9,9 @@ import type {
   OAuthState,
   ClientMetadata,
   JsonWebKey,
-} from '../../../shared/src/types';
+} from 'shared';
 
-import { DEFAULT_CLIENT_METADATA, BLUESKY_OAUTH_ENDPOINTS } from '../../../shared/src/types';
+import { DEFAULT_CLIENT_METADATA, BLUESKY_OAUTH_ENDPOINTS } from 'shared';
 
 /**
  * OAuthClient class - Handles OAuth authentication with Bluesky

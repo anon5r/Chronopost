@@ -1,7 +1,12 @@
-import React, { useEffect, useState } from 'react';
+// React is needed for JSX
+import { useEffect, useState, ChangeEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import type { ScheduledPost, PostStatus } from 'shared';
+
+interface PostsResponse {
+  posts: ScheduledPost[];
+}
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -29,7 +34,7 @@ export function DashboardPage() {
           throw new Error('Failed to fetch posts');
         }
 
-        const data = await response.json();
+        const data = await response.json() as PostsResponse;
         setPosts(data.posts);
       } catch (err) {
         console.error('Error fetching posts:', err);
@@ -80,7 +85,7 @@ export function DashboardPage() {
         <label className='mr-2 font-medium'>Filter by status:</label>
         <select
           value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value as PostStatus | '')}
+          onChange={(e: ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value as PostStatus | '')}
           className='rounded-md border border-gray-300 px-3 py-2'
         >
           <option value=''>All</option>

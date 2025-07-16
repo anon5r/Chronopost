@@ -1,5 +1,10 @@
-import React, { useEffect, useState } from 'react';
+// React is needed for JSX
+import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+
+interface ErrorResponse {
+  message: string;
+}
 
 export function CallbackPage() {
   const [searchParams] = useSearchParams();
@@ -19,7 +24,7 @@ export function CallbackPage() {
         // Get code verifier from cookie
         const codeVerifier = document.cookie
           .split('; ')
-          .find(row => row.startsWith('code_verifier='))
+          .find((row: string) => row.startsWith('code_verifier='))
           ?.split('=')[1];
 
         if (!code || !state || !codeVerifier) {
@@ -37,7 +42,7 @@ export function CallbackPage() {
         });
 
         if (!response.ok) {
-          const data = await response.json();
+          const data = await response.json() as ErrorResponse;
           throw new Error(data.message || 'Authentication failed');
         }
 

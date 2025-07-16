@@ -1,7 +1,7 @@
 import * as cron from 'node-cron';
 import { PostService } from '../bluesky/post-service';
 import { prisma } from '../../lib/prisma';
-import type { ScheduledPost } from '../../../shared/src/types';
+import type { ScheduledPost } from 'shared';
 
 /**
  * PostScheduler class - Handles the execution of scheduled posts

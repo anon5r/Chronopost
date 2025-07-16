@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+interface ErrorResponse {
+  message: string;
+}
+
 export function CreatePostPage() {
-  const { user } = useAuth();
+  // We're using useAuth() but not extracting user yet
+  const { } = useAuth();
   const navigate = useNavigate();
   const [content, setContent] = useState('');
   const [scheduledAt, setScheduledAt] = useState('');
@@ -40,7 +45,7 @@ export function CreatePostPage() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = await response.json() as ErrorResponse;
         throw new Error(data.message || 'Failed to create post');
       }
 
@@ -82,7 +87,7 @@ export function CreatePostPage() {
             <textarea
               id='content'
               value={content}
-              onChange={e => setContent(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
               className='w-full rounded-md border border-gray-300 p-3 focus:border-blue-500 focus:outline-none'
               rows={4}
               maxLength={300}
@@ -100,7 +105,7 @@ export function CreatePostPage() {
               id='scheduledAt'
               type='datetime-local'
               value={scheduledAt}
-              onChange={e => setScheduledAt(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setScheduledAt(e.target.value)}
               min={getMinDateTime()}
               className='w-full rounded-md border border-gray-300 p-3 focus:border-blue-500 focus:outline-none'
               required

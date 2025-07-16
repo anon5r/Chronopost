@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import type { OAuthSession, OAuthToken, JsonWebKey } from '../../../shared/src/types';
+import type { OAuthSession, OAuthToken, JsonWebKey } from 'shared';
 import { prisma } from '../../lib/prisma';
 
 /**

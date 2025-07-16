@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import * as jose from 'jose';
-import type { DPoPKeyPair, DPoPProof, JsonWebKey } from '../../../shared/src/types';
+import type { DPoPKeyPair, DPoPProof, JsonWebKey } from 'shared';
 
 /**
  * DPoPManager class - Handles DPoP (Demonstrating Proof of Possession) operations

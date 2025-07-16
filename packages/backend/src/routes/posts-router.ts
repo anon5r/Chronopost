@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { PostService } from '../services/bluesky/post-service';
-import { CreatePostSchema, UpdatePostSchema } from '../../shared/src/types';
+import { CreatePostSchema, UpdatePostSchema } from 'shared';
 
 // Create a router instance
 const router = new Hono();

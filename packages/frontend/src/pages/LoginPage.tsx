@@ -1,4 +1,4 @@
-import React from 'react';
+// React is needed for JSX
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 

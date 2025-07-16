@@ -7,6 +7,14 @@ interface User {
   displayName?: string;
 }
 
+interface AuthResponse {
+  user: User;
+}
+
+interface LoginResponse {
+  redirectUrl: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -38,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json() as AuthResponse;
           setUser(data.user);
         }
       } catch (error) {
@@ -58,7 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as LoginResponse;
         window.location.href = data.redirectUrl;
       } else {
         throw new Error('Login failed');

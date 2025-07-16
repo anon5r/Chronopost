@@ -1,6 +1,6 @@
 import { DPoPManager } from '../oauth/dpop-manager';
 import { TokenManager } from '../oauth/token-manager';
-import type { ScheduledPost, JsonWebKey } from '../../../shared/src/types';
+import type { ScheduledPost, JsonWebKey } from 'shared';
 
 /**
  * BlueskyApiClient class - Handles communication with the Bluesky API
