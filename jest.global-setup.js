@@ -16,7 +16,7 @@ export default async function globalSetup() {
     DATABASE_URL: 'postgresql://test_user:test_password@localhost:5432/bluesky_scheduler_test',
     CLIENT_ID: 'https://test.example.com/.well-known/bluesky-oauth.json',
     CLIENT_SECRET: 'test-client-secret-for-jest-testing',
-    ENCRYPTION_KEY: 'the-encryption-key-32-chars-long',
+    ENCRYPTION_KEY: 'this-is-a-sample-key-of-32-byte',
     FRONTEND_URL: 'http://localhost:3000',
     REDIS_URL: 'redis://localhost:6379/1', // テスト用DB番号
   };
