@@ -139,6 +139,14 @@ FRONTEND_URL="http://localhost:5173"
 
 ## 利用方法
 
+
+4. データベースの初期化:
+
+```bash
+docker compose --profile db-init up db-init
+```
+
+
 ### 1. OAuth認証設定
 
 Client Metadata を公開：
@@ -231,6 +239,35 @@ docker run -p 3000:3000 \
   -e DATABASE_URL="..." \
   -e CLIENT_ID="..." \
   chronopost-backend
+```
+
+
+## 開発コマンド
+
+```bash
+# 依存関係のインストール
+pnpm install
+
+# 開発モードで実行
+pnpm dev
+
+# データベース生成
+pnpm db:generate
+
+# マイグレーション実行
+pnpm db:migrate
+
+# シードデータ投入
+pnpm db:seed
+
+# テスト実行
+pnpm test
+
+# リント
+pnpm lint
+
+# 型チェック
+pnpm type-check
 ```
 
 ## 運用

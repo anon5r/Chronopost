@@ -5,12 +5,14 @@
 ## プロジェクト理解
 
 ### システム概要
+
 - **目的**: BlueskyのOAuth認証を使用した予約投稿システム
 - **アーキテクチャ**: Monorepo構成（backend/frontend/shared）
 - **認証方式**: AT Protocol OAuth with DPoP（Demonstrating Proof of Possession）
 - **実行方式**: cronベースのスケジューラーによる定期実行
 
 ### 技術的制約
+
 - Node.js 22, TypeScript, pnpm 10.13 必須
 - PostgreSQL + Prisma ORM
 - Hono フレームワーク（Express.js ではない）
@@ -22,6 +24,7 @@
 ### コーディング規約
 
 #### TypeScript
+
 ```typescript
 // ✅ 良い例
 interface CreatePostRequest {
@@ -39,6 +42,7 @@ interface createPostRequest {
 ```
 
 **必須ルール:**
+
 - 全ての型定義に明示的な型注釈
 - `any` 型の使用禁止（`unknown` を使用）
 - PascalCase: インターface, Type, Class
@@ -46,6 +50,7 @@ interface createPostRequest {
 - SCREAMING_SNAKE_CASE: 定数
 
 #### ファイル命名規約
+
 ```
 // ✅ 良い例
 oauth-client.ts          # kebab-case
@@ -60,6 +65,7 @@ APITypes.ts
 ```
 
 #### インポート規約
+
 ```typescript
 // ✅ 順序: 外部ライブラリ → 内部ライブラリ → 型定義
 import { Hono } from 'hono';
@@ -74,6 +80,7 @@ import type { CreatePostRequest } from '../types/api';
 ### ディレクトリ構造ルール
 
 #### バックエンド
+
 - `src/routes/`: APIエンドポイント定義のみ（ビジネスロジックは services へ）
 - `src/services/`: ビジネスロジック実装
 - `src/lib/`: 汎用ユーティリティ・設定
@@ -81,6 +88,7 @@ import type { CreatePostRequest } from '../types/api';
 - `src/middlewares/`: Hono ミドルウェア
 
 #### 機能別ディレクトリ
+
 ```
 src/services/oauth/          # OAuth関連機能
 ├── oauth-client.ts          # メインOAuthクライアント
@@ -102,10 +110,11 @@ src/services/scheduler/      # スケジューラー関連
 ### OAuth実装ルール
 
 #### DPoP実装必須要件
+
 ```typescript
 // ✅ 必須: ES256アルゴリズム使用
 const keyPair = await generateKeyPair('ES256', {
-  extractable: false  // セキュリティ要件
+  extractable: false, // セキュリティ要件
 });
 
 // ✅ 必須: DPoP Proof構造
@@ -114,11 +123,12 @@ const dPopProof = {
   htm: method,
   htu: url,
   iat: Math.floor(Date.now() / 1000),
-  nonce: serverNonce  // サーバーから取得
+  nonce: serverNonce, // サーバーから取得
 };
 ```
 
 #### Client Metadata要件
+
 ```json
 {
   "client_id": "https://example.com/.well-known/bluesky-oauth.json",
@@ -133,6 +143,7 @@ const dPopProof = {
 ```
 
 #### セキュリティ要件
+
 - 全てのトークンはデータベースで暗号化保存
 - DPoPキーペアはセッション期間中のみ保持
 - リフレッシュトークンは使用時にローテーション
@@ -141,6 +152,7 @@ const dPopProof = {
 ### データベース設計ルール
 
 #### Prismaスキーマ
+
 ```prisma
 // ✅ 必須フィールド
 model OAuthSession {
@@ -155,14 +167,15 @@ model OAuthSession {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   isActive         Boolean  @default(true)
-  
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@map("oauth_sessions")
 }
 ```
 
 #### インデックス設計
+
 ```prisma
 // ✅ 必須インデックス
 @@index([scheduledAt, status])  // スケジューラー用
@@ -173,6 +186,7 @@ model OAuthSession {
 ### API設計ルール
 
 #### Honoルーター構造
+
 ```typescript
 // ✅ 標準構造
 const app = new Hono();
@@ -189,6 +203,7 @@ app.route('/api/posts', postsRouter);
 ```
 
 #### エラーハンドリング
+
 ```typescript
 // ✅ 統一エラー形式
 interface APIError {
@@ -199,15 +214,19 @@ interface APIError {
 }
 
 // ✅ エラーレスポンス例
-return c.json({
-  error: 'OAUTH_ERROR',
-  message: 'Failed to refresh access token',
-  code: 401,
-  details: { reason: 'refresh_token_expired' }
-}, 401);
+return c.json(
+  {
+    error: 'OAUTH_ERROR',
+    message: 'Failed to refresh access token',
+    code: 401,
+    details: { reason: 'refresh_token_expired' },
+  },
+  401
+);
 ```
 
 #### バリデーション
+
 ```typescript
 // ✅ Zod使用（推奨）
 import { z } from 'zod';
@@ -221,17 +240,18 @@ const CreatePostSchema = z.object({
 ### スケジューラー実装ルール
 
 #### Cron実装
+
 ```typescript
 // ✅ 必須: 排他制御実装
 class PostScheduler {
   private isRunning = false;
-  
+
   async processPendingPosts() {
     if (this.isRunning) {
       console.log('Scheduler already running, skipping...');
       return;
     }
-    
+
     this.isRunning = true;
     try {
       // 処理実装
@@ -243,6 +263,7 @@ class PostScheduler {
 ```
 
 #### エラーハンドリング
+
 ```typescript
 // ✅ 投稿失敗時の必須処理
 const MAX_RETRIES = 3;
@@ -264,16 +285,17 @@ async executePost(post: ScheduledPost) {
 ### テスト要件
 
 #### 必須テストケース
+
 ```typescript
 describe('OAuth Client', () => {
   test('DPoP proof generation', async () => {
     // DPoP証明の正しい生成
   });
-  
+
   test('Token refresh with rotation', async () => {
     // リフレッシュトークンローテーション
   });
-  
+
   test('Concurrent refresh prevention', async () => {
     // 同時リフレッシュ防止
   });
@@ -283,11 +305,11 @@ describe('Post Scheduler', () => {
   test('Pending posts execution', async () => {
     // 予約投稿実行
   });
-  
+
   test('Failed post retry mechanism', async () => {
     // リトライ機構
   });
-  
+
   test('OAuth token refresh during execution', async () => {
     // 実行中のトークンリフレッシュ
   });
@@ -297,6 +319,7 @@ describe('Post Scheduler', () => {
 ### セキュリティチェックリスト
 
 #### 実装必須項目
+
 - [ ] 全トークンの暗号化保存
 - [ ] DPoPキーペアの適切な管理
 - [ ] PKCE実装（S256のみ）
@@ -311,27 +334,30 @@ describe('Post Scheduler', () => {
 ### パフォーマンス要件
 
 #### データベース
+
 ```typescript
 // ✅ バッチ処理の実装
 const posts = await prisma.scheduledPost.findMany({
-  take: 100,  // バッチサイズ制限
+  take: 100, // バッチサイズ制限
   where: { status: 'PENDING', scheduledAt: { lte: new Date() } },
-  include: { user: { include: { sessions: true } } }
+  include: { user: { include: { sessions: true } } },
 });
 ```
 
 #### APIリクエスト
+
 ```typescript
 // ✅ レート制限対応
 const RATE_LIMIT = {
-  bluesky: 300,  // 5分間
-  oauth: 60      // 1分間
+  bluesky: 300, // 5分間
+  oauth: 60, // 1分間
 };
 ```
 
 ### ログ要件
 
 #### ログレベル
+
 ```typescript
 // ✅ 必須ログ項目
 logger.info('OAuth session created', { userId, sessionId });
@@ -341,25 +367,27 @@ logger.debug('DPoP proof generated', { method, url });
 ```
 
 #### 機密情報の除外
+
 ```typescript
 // ❌ 機密情報をログに出力禁止
-logger.info('Token received', { token: accessToken });  // NG
+logger.info('Token received', { token: accessToken }); // NG
 
 // ✅ 機密情報の除外
-logger.info('Token received', { tokenLength: accessToken.length });  // OK
+logger.info('Token received', { tokenLength: accessToken.length }); // OK
 ```
 
 ### デプロイ・運用ルール
 
 #### 環境変数検証
+
 ```typescript
 // ✅ 起動時検証必須
 const requiredEnvVars = [
   'DATABASE_URL',
-  'CLIENT_ID', 
+  'CLIENT_ID',
   'CLIENT_SECRET',
   'ENCRYPTION_KEY',
-  'FRONTEND_URL'
+  'FRONTEND_URL',
 ];
 
 requiredEnvVars.forEach(varName => {
@@ -370,15 +398,16 @@ requiredEnvVars.forEach(varName => {
 ```
 
 #### ヘルスチェック
+
 ```typescript
 // ✅ 必須エンドポイント
-app.get('/health', async (c) => {
+app.get('/health', async c => {
   return c.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     version: process.env.npm_package_version,
     database: await checkDatabaseHealth(),
-    scheduler: getSchedulerStatus()
+    scheduler: getSchedulerStatus(),
   });
 });
 ```
@@ -386,6 +415,7 @@ app.get('/health', async (c) => {
 ### CI/CD要件
 
 #### 必須チェック項目
+
 - TypeScript型チェック
 - ESLint + Prettier
 - テスト実行（カバレッジ80%以上）
@@ -394,6 +424,7 @@ app.get('/health', async (c) => {
 - データベースマイグレーション確認
 
 #### デプロイ前確認
+
 - [ ] 環境変数の設定確認
 - [ ] Client Metadata の公開確認
 - [ ] データベースマイグレーション実行
@@ -403,12 +434,14 @@ app.get('/health', async (c) => {
 ### 開発フェーズ別タスク
 
 #### フェーズ1: 基盤構築
+
 - プロジェクト構造作成
 - 開発環境セットアップ
 - データベーススキーマ作成
 - 基本的なCRUD操作
 
 #### フェーズ2: OAuth実装
+
 - DPoP実装
 - OAuth認証フロー
 - トークン管理機能
@@ -419,6 +452,7 @@ app.get('/health', async (c) => {
 ### トラブルシューティング
 
 #### OAuth関連エラー
+
 ```
 DPoP nonce mismatch → サーバーからの最新nonceを取得
 Bad token scope → Client Metadataの権限設定確認
@@ -426,6 +460,7 @@ Invalid client → Client IDとMetadata URLの一致確認
 ```
 
 #### スケジューラー関連エラー
+
 ```
 Concurrent execution → 排他制御の実装確認
 Token expired → リフレッシュ機構の動作確認

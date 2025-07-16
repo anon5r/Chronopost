@@ -1,6 +1,6 @@
 /**
  * Security Middleware for Chronopost Backend
- * 
+ *
  * Implements comprehensive security headers and protections:
  * - DDoS protection
  * - XSS protection
@@ -13,7 +13,7 @@ import { Context, Next } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { logger } from 'hono/logger';
-import { rateLimiter } from 'hono/rate-limiter';
+import { rateLimiter } from 'hono-rate-limiter';
 
 /**
  * CORS設定 - OAuth認証とフロントエンド連携用
@@ -33,7 +33,7 @@ export const corsConfig = cors({
       allowedOrigins.push('http://localhost:3000', 'http://localhost:5173');
     }
 
-    return allowedOrigins.includes(origin || '');
+    return allowedOrigins.includes(origin || '') ? origin : null;
   },
   allowHeaders: [
     'Origin',
@@ -60,8 +60,8 @@ export const securityHeaders = secureHeaders({
     defaultSrc: ["'self'"],
     styleSrc: ["'self'", "'unsafe-inline'"],
     scriptSrc: ["'self'"],
-    imgSrc: ["'self'", "data:", "https:"],
-    connectSrc: ["'self'", "https://bsky.social", "https://*.bsky.network"],
+    imgSrc: ["'self'", 'data:', 'https:'],
+    connectSrc: ["'self'", 'https://bsky.social', 'https://*.bsky.network'],
     fontSrc: ["'self'"],
     mediaSrc: ["'self'"],
     objectSrc: ["'none'"],
@@ -69,22 +69,17 @@ export const securityHeaders = secureHeaders({
     upgradeInsecureRequests: [],
   },
   crossOriginEmbedderPolicy: false, // OAuth認証で必要
-  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }, // OAuth認証で必要
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-  dnsPrefetchControl: { allow: false },
-  frameguard: { action: 'deny' },
-  hidePoweredBy: true,
-  hsts: {
-    maxAge: 31536000, // 1年
-    includeSubDomains: true,
-    preload: true,
-  },
-  ieNoOpen: true,
-  noSniff: true,
+  crossOriginOpenerPolicy: 'same-origin-allow-popups', // OAuth認証で必要
+  crossOriginResourcePolicy: 'cross-origin',
+  xDnsPrefetchControl: false,
+  xFrameOptions: 'DENY',
+  strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload;',
+  xDownloadOptions: true,
+  xContentTypeOptions: true,
   originAgentCluster: true,
-  permittedCrossDomainPolicies: false,
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  xssFilter: true,
+  xPermittedCrossDomainPolicies: false,
+  referrerPolicy: 'strict-origin-when-cross-origin',
+  xXssProtection: true,
 });
 
 /**
@@ -96,24 +91,24 @@ export const createRateLimiter = (maxRequests: number, windowMs: number) => {
     windowMs,
     limit: maxRequests,
     standardHeaders: 'draft-6',
-    legacyHeaders: false,
     // Redis使用時はここでstore設定
     // store: redisStore,
     keyGenerator: (c: Context) => {
       // IP + User-Agent でキー生成（より厳密な制限）
       const forwarded = c.req.header('x-forwarded-for');
-      const ip = forwarded ? forwarded.split(',')[0] : 
-                 c.req.header('x-real-ip') || 
-                 'unknown';
+      const ip = forwarded ? forwarded.split(',')[0] : c.req.header('x-real-ip') || 'unknown';
       const userAgent = c.req.header('user-agent') || 'unknown';
       return `${ip}:${userAgent.slice(0, 50)}`;
     },
     handler: (c: Context) => {
-      return c.json({
-        error: 'RATE_LIMIT_EXCEEDED',
-        message: 'Too many requests, please try again later',
-        code: 429,
-      }, 429);
+      return c.json(
+        {
+          error: 'RATE_LIMIT_EXCEEDED',
+          message: 'Too many requests, please try again later',
+          code: 429,
+        },
+        429
+      );
     },
   });
 };
@@ -126,7 +121,7 @@ export const oauthSecurityMiddleware = async (c: Context, next: Next) => {
   if (c.req.path.startsWith('/api/auth/')) {
     const nonce = crypto.randomUUID();
     c.header('DPoP-Nonce', nonce);
-    
+
     // セキュリティヘッダーの追加
     c.header('Cache-Control', 'no-cache, no-store, must-revalidate');
     c.header('Pragma', 'no-cache');
@@ -134,6 +129,7 @@ export const oauthSecurityMiddleware = async (c: Context, next: Next) => {
   }
 
   await next();
+  return;
 };
 
 /**
@@ -145,20 +141,24 @@ export const apiSecurityMiddleware = async (c: Context, next: Next) => {
   c.header('X-Content-Type-Options', 'nosniff');
   c.header('X-Frame-Options', 'DENY');
   c.header('X-XSS-Protection', '1; mode=block');
-  
+
   // JSON API の Content-Type 強制
   if (c.req.method !== 'GET' && c.req.header('content-type')) {
     const contentType = c.req.header('content-type');
     if (!contentType?.includes('application/json')) {
-      return c.json({
-        error: 'INVALID_CONTENT_TYPE',
-        message: 'Content-Type must be application/json',
-        code: 400,
-      }, 400);
+      return c.json(
+        {
+          error: 'INVALID_CONTENT_TYPE',
+          message: 'Content-Type must be application/json',
+          code: 400,
+        },
+        400
+      );
     }
   }
 
   await next();
+  return;
 };
 
 /**
@@ -185,26 +185,33 @@ export const secureLogger = logger((message: string) => {
 export const secureErrorHandler = async (c: Context, next: Next) => {
   try {
     await next();
+    return;
   } catch (error) {
     console.error('Application error:', error);
 
     // 本番環境では詳細なエラー情報を隠蔽
     const isDevelopment = process.env.NODE_ENV === 'development';
-    
+
     if (error instanceof Error) {
-      return c.json({
-        error: 'INTERNAL_SERVER_ERROR',
-        message: isDevelopment ? error.message : 'An unexpected error occurred',
-        code: 500,
-        ...(isDevelopment && { stack: error.stack }),
-      }, 500);
+      return c.json(
+        {
+          error: 'INTERNAL_SERVER_ERROR',
+          message: isDevelopment ? error.message : 'An unexpected error occurred',
+          code: 500,
+          ...(isDevelopment && { stack: error.stack }),
+        },
+        500
+      );
     }
 
-    return c.json({
-      error: 'UNKNOWN_ERROR',
-      message: 'An unexpected error occurred',
-      code: 500,
-    }, 500);
+    return c.json(
+      {
+        error: 'UNKNOWN_ERROR',
+        message: 'An unexpected error occurred',
+        code: 500,
+      },
+      500
+    );
   }
 };
 
@@ -214,24 +221,24 @@ export const secureErrorHandler = async (c: Context, next: Next) => {
 export const setupSecurity = (app: any) => {
   // 基本セキュリティヘッダー
   app.use('*', securityHeaders);
-  
+
   // CORS設定
   app.use('*', corsConfig);
-  
+
   // セキュアログ
   app.use('*', secureLogger);
-  
+
   // エラーハンドリング
   app.use('*', secureErrorHandler);
-  
+
   // レート制限（エンドポイント別）
   app.use('/api/auth/*', createRateLimiter(60, 60 * 1000)); // 1分間に60回
   app.use('/api/posts/*', createRateLimiter(300, 60 * 1000)); // 1分間に300回
   app.use('/api/*', createRateLimiter(1000, 60 * 1000)); // その他APIは1分間に1000回
-  
+
   // OAuth専用セキュリティ
   app.use('/api/auth/*', oauthSecurityMiddleware);
-  
+
   // API全体セキュリティ
   app.use('/api/*', apiSecurityMiddleware);
 };
@@ -244,15 +251,18 @@ export const mediaSecurityMiddleware = async (c: Context, next: Next) => {
     // ファイルアップロード専用の制限
     const contentLength = c.req.header('content-length');
     const maxSize = 50 * 1024 * 1024; // 50MB
-    
+
     if (contentLength && parseInt(contentLength) > maxSize) {
-      return c.json({
-        error: 'FILE_TOO_LARGE',
-        message: 'File size exceeds 50MB limit',
-        code: 413,
-      }, 413);
+      return c.json(
+        {
+          error: 'FILE_TOO_LARGE',
+          message: 'File size exceeds 50MB limit',
+          code: 413,
+        },
+        413
+      );
     }
-    
+
     // Content-Type検証
     const contentType = c.req.header('content-type');
     const allowedTypes = [
@@ -263,17 +273,21 @@ export const mediaSecurityMiddleware = async (c: Context, next: Next) => {
       'video/mp4', // Phase 4
       'video/webm', // Phase 4
     ];
-    
+
     if (contentType && !allowedTypes.some(type => contentType.startsWith(type))) {
-      return c.json({
-        error: 'UNSUPPORTED_MEDIA_TYPE',
-        message: 'Unsupported file type',
-        code: 415,
-      }, 415);
+      return c.json(
+        {
+          error: 'UNSUPPORTED_MEDIA_TYPE',
+          message: 'Unsupported file type',
+          code: 415,
+        },
+        415
+      );
     }
   }
 
   await next();
+  return;
 };
 
 /**
@@ -286,10 +300,11 @@ export const billingSecurityMiddleware = async (c: Context, next: Next) => {
       // Stripe Signatureの検証は別途実装
       c.header('Cache-Control', 'no-cache');
     }
-    
+
     // 課金関連は特に厳しいレート制限
     // 別途実装される予定
   }
 
   await next();
+  return;
 };

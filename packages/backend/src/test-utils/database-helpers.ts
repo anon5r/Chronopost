@@ -14,7 +14,9 @@ import { testUtils } from './index';
 export const testPrisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || 'postgresql://test_user:test_password@localhost:5432/chronopost_test',
+      url:
+        process.env.DATABASE_URL ||
+        'postgresql://test_user:test_password@localhost:5432/chronopost_test',
     },
   },
   log: process.env.DEBUG_TESTS === 'true' ? ['query', 'info', 'warn', 'error'] : ['error'],
@@ -29,20 +31,14 @@ export const databaseHelpers = {
    * 外部キー制約を考慮した順序で削除
    */
   async cleanDatabase(): Promise<void> {
-    const tables = [
-      'audit_logs',
-      'scheduled_posts',
-      'oauth_sessions',
-      'users',
-      'system_configs',
-    ];
+    const tables = ['audit_logs', 'scheduled_posts', 'oauth_sessions', 'users', 'system_configs'];
 
     // トランザクション内で順次削除
-    await testPrisma.$transaction(async (tx) => {
+    await testPrisma.$transaction(async tx => {
       for (const table of tables) {
         await tx.$executeRawUnsafe(`DELETE FROM "${table}"`);
       }
-      
+
       // シーケンスのリセット（PostgreSQL）
       for (const table of tables) {
         try {
@@ -108,12 +104,14 @@ export const databaseHelpers = {
   /**
    * 特定のユーザーのテストデータを作成
    */
-  async createTestUser(overrides?: Partial<{
-    did: string;
-    handle: string;
-    displayName: string;
-    isActive: boolean;
-  }>): Promise<UserProfile> {
+  async createTestUser(
+    overrides?: Partial<{
+      did: string;
+      handle: string;
+      displayName: string;
+      isActive: boolean;
+    }>
+  ): Promise<UserProfile> {
     const userData = {
       did: `did:plc:test-${Math.random().toString(36).substr(2, 9)}`,
       handle: `testuser-${Math.random().toString(36).substr(2, 9)}.bsky.social`,
@@ -245,9 +243,7 @@ export const databaseHelpers = {
   /**
    * テストトランザクションの実行
    */
-  async runInTransaction<T>(
-    operation: (tx: PrismaClient) => Promise<T>
-  ): Promise<T> {
+  async runInTransaction<T>(operation: (tx: PrismaClient) => Promise<T>): Promise<T> {
     return await testPrisma.$transaction(operation);
   },
 };
@@ -284,7 +280,7 @@ export const performanceHelpers = {
    */
   async createBulkTestData(userCount = 100, postsPerUser = 10): Promise<void> {
     console.log(`Creating ${userCount} users with ${postsPerUser} posts each...`);
-    
+
     const users = [];
     for (let i = 0; i < userCount; i++) {
       users.push({

@@ -1,16 +1,17 @@
 # GitHub Actions CI/CD ドキュメント
 
-Chronopostプロジェクトでは、コード品質の維持とデプロイの自動化のため、複数のGitHub Actionsワークフローを運用しています。
+Chronopostプロジェクトでは、コード品質の維持とデプロイの自動化のため、複数のGitHub
+Actionsワークフローを運用しています。
 
 ## 概要
 
 ### ワークフロー構成
 
-| ワークフロー | ファイル | 目的 | トリガー |
-|------------|---------|------|---------|
-| **CI/CD Pipeline** | `ci.yml` | テスト・ビルド・デプロイ | プッシュ・PR |
-| **AI Code Review** | `ai-review.yml` | AI によるコードレビュー | PR作成・更新 |
-| **Docker Build** | `docker.yml` | コンテナイメージ作成 | プッシュ・タグ |
+| ワークフロー       | ファイル        | 目的                     | トリガー       |
+| ------------------ | --------------- | ------------------------ | -------------- |
+| **CI/CD Pipeline** | `ci.yml`        | テスト・ビルド・デプロイ | プッシュ・PR   |
+| **AI Code Review** | `ai-review.yml` | AI によるコードレビュー  | PR作成・更新   |
+| **Docker Build**   | `docker.yml`    | コンテナイメージ作成     | プッシュ・タグ |
 
 ### 段階的機能対応
 
@@ -44,6 +45,7 @@ graph TD
 ### ジョブ詳細
 
 #### 1. Lint & Format Check
+
 ```yaml
 # コード品質チェック
 - TypeScript型チェック (`pnpm run type-check`)
@@ -52,6 +54,7 @@ graph TD
 ```
 
 **必要な package.json スクリプト:**
+
 ```json
 {
   "scripts": {
@@ -63,6 +66,7 @@ graph TD
 ```
 
 #### 2. Security Audit
+
 ```yaml
 # セキュリティチェック
 - pnpm audit (脆弱性スキャン)
@@ -73,6 +77,7 @@ graph TD
 **重要:** OAuth/DPoP実装のセキュリティが特に重視されます。
 
 #### 3. Tests
+
 ```yaml
 # テスト実行
 - PostgreSQL 15 + Redis 7 環境
@@ -82,20 +87,22 @@ graph TD
 ```
 
 **データベース設定:**
+
 ```bash
 DATABASE_URL=postgresql://test_user:test_password@localhost:5432/bluesky_scheduler_test
 REDIS_URL=redis://localhost:6379
 ```
 
 #### 4. Build
+
 ```yaml
 # ビルドプロセス
-1. Shared package → Backend → Frontend順でビルド
-2. 成果物のアーティファクト保存
+1. Shared package → Backend → Frontend順でビルド 2. 成果物のアーティファクト保存
 3. ビルドサイズの確認
 ```
 
 #### 5. Migration Check
+
 ```yaml
 # データベース整合性確認
 - Prismaスキーマ検証
@@ -104,6 +111,7 @@ REDIS_URL=redis://localhost:6379
 ```
 
 #### 6. Deploy Staging (`develop` ブランチ)
+
 ```yaml
 # ステージング環境デプロイ
 - Railway (Backend)
@@ -113,10 +121,11 @@ REDIS_URL=redis://localhost:6379
 ```
 
 #### 7. Deploy Production (`main` ブランチ)
+
 ```yaml
 # 本番環境デプロイ
 - Railway (Backend)
-- Vercel (Frontend) 
+- Vercel (Frontend)
 - ヘルスチェック実行
 - Discord通知
 ```
@@ -126,6 +135,7 @@ REDIS_URL=redis://localhost:6379
 #### Repository Secrets
 
 **デプロイ関連:**
+
 ```bash
 # Railway (Backend hosting)
 RAILWAY_TOKEN_STAGING
@@ -144,6 +154,7 @@ DISCORD_WEBHOOK
 ```
 
 **Phase 3以降 (メディア機能):**
+
 ```bash
 # ストレージ (S3互換)
 STORAGE_ACCESS_KEY
@@ -152,6 +163,7 @@ STORAGE_BUCKET
 ```
 
 **Phase 4以降 (課金機能):**
+
 ```bash
 # Stripe
 STRIPE_SECRET_KEY
@@ -167,38 +179,31 @@ EMAIL_SERVICE_KEY
 
 複数のAIサービスによる包括的なコードレビューを実施：
 
-| AI サービス | モデル | 特徴 | API Key |
-|------------|--------|------|---------|
-| **OpenAI** | GPT-4o / GPT-4o-mini | 一般的なコード品質 | `OPENAI_API_KEY` |
-| **Anthropic** | Claude | セキュリティ・ベストプラクティス | `ANTHROPIC_API_KEY` |
-| **Google** | Gemini 1.5 Pro | パフォーマンス・最適化 | `GEMINI_API_KEY` |
+| AI サービス   | モデル               | 特徴                             | API Key             |
+| ------------- | -------------------- | -------------------------------- | ------------------- |
+| **OpenAI**    | GPT-4o / GPT-4o-mini | 一般的なコード品質               | `OPENAI_API_KEY`    |
+| **Anthropic** | Claude               | セキュリティ・ベストプラクティス | `ANTHROPIC_API_KEY` |
+| **Google**    | Gemini 1.5 Pro       | パフォーマンス・最適化           | `GEMINI_API_KEY`    |
 
 ### レビュー観点
 
 #### 重点チェック項目
+
 ```yaml
-1. セキュリティ脆弱性
-   - OAuth/DPoP実装の正確性
-   - トークン・秘密情報の適切な管理
-   - 入力サニタイゼーション
+1. セキュリティ脆弱性 - OAuth/DPoP実装の正確性 - トークン・秘密情報の適切な管理
+- 入力サニタイゼーション
 
-2. TypeScript型安全性
-   - 型注釈の完全性
-   - any型の使用回避
-   - エラーハンドリング
+2. TypeScript型安全性 - 型注釈の完全性 - any型の使用回避 - エラーハンドリング
 
-3. パフォーマンス問題
-   - データベースクエリ最適化
-   - メモリリーク防止
-   - 非同期処理の適切な実装
+3. パフォーマンス問題 - データベースクエリ最適化 - メモリリーク防止 -
+非同期処理の適切な実装
 
-4. コーディング規約準拠
-   - CLAUDE.mdガイドライン準拠
-   - 一貫したコードスタイル
-   - 適切なアーキテクチャ
+4. コーディング規約準拠 - CLAUDE.mdガイドライン準拠 - 一貫したコードスタイル -
+適切なアーキテクチャ
 ```
 
 #### 無視される項目
+
 ```yaml
 - Prettierで修正可能な軽微なフォーマット問題
 - 単純なリネーム・リファクタリング
@@ -208,6 +213,7 @@ EMAIL_SERVICE_KEY
 ### 特別なレビュー
 
 #### OAuth専用レビュー
+
 OAuth/DPoP関連ファイルに変更がある場合、追加の専門レビューを実行：
 
 ```bash
@@ -219,6 +225,7 @@ OAuth/DPoP関連ファイルに変更がある場合、追加の専門レビュ�
 ```
 
 #### セキュリティレビュー
+
 ```bash
 # 包括的セキュリティスキャン
 - ESLint セキュリティルール
@@ -228,6 +235,7 @@ OAuth/DPoP関連ファイルに変更がある場合、追加の専門レビュ�
 ```
 
 #### パフォーマンスレビュー
+
 ```bash
 # パフォーマンス問題検出
 - バンドルサイズ分析
@@ -238,7 +246,8 @@ OAuth/DPoP関連ファイルに変更がある場合、追加の専門レビュ�
 
 ### API Key設定方法
 
-各AIサービスのAPI Keyは任意設定です。設定されていないサービスはスキップされます：
+各AIサービスのAPI
+Keyは任意設定です。設定されていないサービスはスキップされます：
 
 ```bash
 # GitHub Repository Settings > Secrets and variables > Actions
@@ -256,15 +265,14 @@ GEMINI_API_KEY=...
 ### レビュー結果
 
 #### サマリー例
+
 ```markdown
 ## 🤖 AI Review Summary
 
-**Reviews Completed:** 5/6
-**✅ Passed:** 4
-**❌ Failed:** 1
-**⏭️ Skipped:** 1
+**Reviews Completed:** 5/6 **✅ Passed:** 4 **❌ Failed:** 1 **⏭️ Skipped:** 1
 
 ### Review Results:
+
 - OpenAI Review: ✅ success
 - Claude Review: ✅ success
 - Gemini Review: ❌ failure
@@ -280,6 +288,7 @@ GEMINI_API_KEY=...
 ### イメージ構成
 
 #### 対象イメージ
+
 ```yaml
 Backend Image:
   - Registry: ghcr.io/[owner]/chronopost/backend
@@ -287,12 +296,13 @@ Backend Image:
   - Platforms: linux/amd64, linux/arm64
 
 Frontend Image:
-  - Registry: ghcr.io/[owner]/chronopost/frontend  
+  - Registry: ghcr.io/[owner]/chronopost/frontend
   - Base: Nginx Alpine
   - Platforms: linux/amd64, linux/arm64
 ```
 
 #### タグ戦略
+
 ```yaml
 Branch-based tags:
   - main → latest, production
@@ -301,7 +311,7 @@ Branch-based tags:
 
 Version tags (when tagged):
   - v1.2.3 → 1.2.3, 1.2, 1
-  
+
 Commit-based tags:
   - sha-{7文字のコミットハッシュ}
 ```
@@ -309,6 +319,7 @@ Commit-based tags:
 ### ビルドプロセス
 
 #### 1. Multi-architecture Build
+
 ```yaml
 # Docker Buildx使用
 - linux/amd64 (Intel/AMD)
@@ -317,6 +328,7 @@ Commit-based tags:
 ```
 
 #### 2. セキュリティスキャン
+
 ```yaml
 # Trivy脆弱性スキャン
 - イメージレイヤー解析
@@ -326,6 +338,7 @@ Commit-based tags:
 ```
 
 #### 3. イメージ管理
+
 ```yaml
 # 自動クリーンアップ
 - 30日以上古いイメージの削除
@@ -336,6 +349,7 @@ Commit-based tags:
 ### Dockerfile構成
 
 #### Backend Dockerfile 例
+
 ```dockerfile
 # Multi-stage build
 FROM node:22-alpine AS base
@@ -365,6 +379,7 @@ CMD ["node", "dist/index.js"]
 ### 使用方法
 
 #### イメージ取得
+
 ```bash
 # 最新版 (main branch)
 docker pull ghcr.io/[owner]/chronopost/backend:latest
@@ -377,6 +392,7 @@ docker pull ghcr.io/[owner]/chronopost/backend:develop
 ```
 
 #### ローカル実行
+
 ```bash
 # Backend
 docker run -p 3000:3000 \
@@ -394,6 +410,7 @@ docker run -p 80:80 \
 ### 1. Repository準備
 
 #### GitHub Repository設定
+
 ```bash
 # 1. Repositoryの作成・クローン
 git clone https://github.com/[owner]/chronopost.git
@@ -405,6 +422,7 @@ cd chronopost
 ```
 
 #### 必要なSecrets設定
+
 ```bash
 # GitHub Repository > Settings > Secrets and variables > Actions
 
@@ -416,7 +434,7 @@ DISCORD_WEBHOOK
 
 # 2. AIレビュー関連 (任意)
 OPENAI_API_KEY
-ANTHROPIC_API_KEY  
+ANTHROPIC_API_KEY
 GEMINI_API_KEY
 
 # 3. Phase 3以降 (任意)
@@ -427,6 +445,7 @@ STRIPE_SECRET_KEY
 ### 2. 環境セットアップ
 
 #### Railway設定 (Backend)
+
 ```bash
 # 1. Railway CLIインストール
 npm install -g @railway/cli
@@ -441,6 +460,7 @@ railway variables set CLIENT_ID="https://..."
 ```
 
 #### Vercel設定 (Frontend)
+
 ```bash
 # 1. Vercel CLIインストール
 npm install -g vercel
@@ -456,6 +476,7 @@ vercel env add VITE_API_URL
 ### 3. ワークフロー有効化
 
 #### 必要なpackage.jsonスクリプト
+
 ```json
 {
   "scripts": {
@@ -475,6 +496,7 @@ vercel env add VITE_API_URL
 ```
 
 #### 初回実行確認
+
 ```bash
 # 1. ローカルでのテスト実行
 pnpm install
@@ -499,12 +521,13 @@ git push origin develop
 #### 1. CI/CD実行エラー
 
 **ビルドエラー:**
+
 ```bash
 # TypeScript型エラー
 Error: Type errors found
 → pnpm run type-check でローカル確認
 
-# 依存関係エラー  
+# 依存関係エラー
 Error: Package not found
 → pnpm install --frozen-lockfile で依存関係修正
 
@@ -514,6 +537,7 @@ Error: Tests failed
 ```
 
 **デプロイエラー:**
+
 ```bash
 # Railway デプロイ失敗
 Error: Deployment failed
@@ -529,6 +553,7 @@ Error: Build failed
 #### 2. AIレビューエラー
 
 **API Key関連:**
+
 ```bash
 # OpenAI API制限
 Error: Rate limit exceeded
@@ -542,6 +567,7 @@ Error: Invalid API key
 ```
 
 **レビュー品質:**
+
 ```bash
 # 誤った指摘
 → system_messageの調整
@@ -555,6 +581,7 @@ Error: Invalid API key
 #### 3. Docker関連エラー
 
 **ビルドエラー:**
+
 ```bash
 # Multi-arch ビルド失敗
 Error: exec format error
@@ -568,6 +595,7 @@ Error: Cache mount failed
 ```
 
 **セキュリティスキャン:**
+
 ```bash
 # Trivy スキャン失敗
 Error: Scanner error
@@ -583,6 +611,7 @@ Warning: High severity vulnerabilities
 ### ログ確認方法
 
 #### GitHub Actions ログ
+
 ```bash
 # 1. Repository > Actions
 # 2. 失敗したWorkflowを選択
@@ -598,6 +627,7 @@ Warning: High severity vulnerabilities
 ```
 
 #### デバッグモード有効化
+
 ```yaml
 # workflow に追加
 - name: Enable debug logging
@@ -607,6 +637,7 @@ Warning: High severity vulnerabilities
 ### パフォーマンス最適化
 
 #### ビルド時間短縮
+
 ```yaml
 # 1. キャッシュ活用
 uses: actions/setup-node@v4
@@ -624,6 +655,7 @@ if: contains(github.event.pull_request.changed_files, 'packages/backend')
 ```
 
 #### コスト最適化
+
 ```yaml
 # 1. 不要なJob skip
 if: github.event.pull_request.draft == false
@@ -638,23 +670,27 @@ uses: tj-actions/changed-files@v41
 ## Phase別拡張計画
 
 ### Phase 1 (MVP): 基本CI/CD
+
 - [x] 基本的なLint・Test・Build
 - [x] OAuth/DPoP セキュリティチェック
 - [x] ステージング・本番デプロイ
 - [x] AIレビュー基盤
 
 ### Phase 2: スレッド投稿対応
+
 - [ ] スレッド関連テストの追加
 - [ ] 依存関係テストの強化
 - [ ] データ整合性チェック
 
 ### Phase 3: メディア機能対応
+
 - [ ] 画像処理テスト
 - [ ] ストレージ接続テスト
 - [ ] メディアファイルセキュリティスキャン
 - [ ] パフォーマンステスト (大容量ファイル)
 
 ### Phase 4: 高度な機能
+
 - [ ] 決済関連セキュリティテスト
 - [ ] 負荷テスト
 - [ ] GDPR準拠チェック
@@ -662,4 +698,5 @@ uses: tj-actions/changed-files@v41
 
 ---
 
-このドキュメントは開発の進行に合わせて更新されます。質問や改善提案があれば、GitHub Issuesで報告してください。
+このドキュメントは開発の進行に合わせて更新されます。質問や改善提案があれば、GitHub
+Issuesで報告してください。

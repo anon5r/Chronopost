@@ -7,23 +7,23 @@ export default {
   // テスト環境設定
   testEnvironment: 'node',
   preset: 'ts-jest/presets/default-esm',
-  
+
   // TypeScript + ESModules設定
   extensionsToTreatAsEsm: ['.ts'],
-  moduleNameMapping: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
-  },
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      useESM: true,
-      tsconfig: {
-        module: 'ESNext',
-        target: 'ES2022',
-        moduleResolution: 'bundler',
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      {
+        useESM: true,
+        tsconfig: {
+          module: 'ESNext',
+          target: 'ES2022',
+          moduleResolution: 'bundler',
+        },
       },
-    }],
+    ],
   },
-  
+
   // モジュール解決
   moduleDirectories: ['node_modules', '<rootDir>/src'],
   modulePaths: ['<rootDir>/src'],
@@ -31,18 +31,16 @@ export default {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared/(.*)$': '<rootDir>/../shared/src/$1',
   },
-  
+
   // テストファイルの検出
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.{ts,tsx}',
     '<rootDir>/src/**/*.{test,spec}.{ts,tsx}',
   ],
-  
+
   // セットアップファイル
-  setupFilesAfterEnv: [
-    '<rootDir>/../../jest.setup.js',
-  ],
-  
+  setupFilesAfterEnv: ['<rootDir>/../../jest.setup.js'],
+
   // カバレッジ設定
   collectCoverage: false, // デフォルトでは無効、npm scriptで有効化
   collectCoverageFrom: [
@@ -54,12 +52,7 @@ export default {
     '!src/test-utils/**',
   ],
   coverageDirectory: '<rootDir>/coverage',
-  coverageReporters: [
-    'text',
-    'lcov',
-    'html',
-    'json-summary',
-  ],
+  coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
   coverageThreshold: {
     global: {
       branches: 70,
@@ -81,25 +74,25 @@ export default {
       statements: 80,
     },
   },
-  
+
   // テスト環境変数
   testEnvironmentOptions: {
     NODE_ENV: 'test',
   },
-  
+
   // タイムアウト設定
   testTimeout: 30000,
-  
+
   // パフォーマンス設定
   maxWorkers: '50%',
-  
+
   // エラーハンドリング
   errorOnDeprecated: true,
-  
+
   // キャッシュ設定
   cache: true,
   cacheDirectory: '<rootDir>/node_modules/.cache/jest',
-  
+
   // レポーター設定
   reporters: [
     'default',
@@ -116,23 +109,23 @@ export default {
       },
     ],
   ],
-  
+
   // 詳細設定
+  /* eslint-disable no-undef */
   verbose: process.env.DEBUG_TESTS === 'true',
   silent: process.env.DEBUG_TESTS !== 'true',
-  
+  /* eslint-enable no-undef */
+
   // グローバル設定
   globals: {
     'ts-jest': {
       useESM: true,
     },
   },
-  
+
   // ファイル変換設定
-  transformIgnorePatterns: [
-    'node_modules/(?!(jose|@hono|hono)/)',
-  ],
-  
+  transformIgnorePatterns: ['node_modules/(?!(jose|@hono|hono)/)'],
+
   // セキュリティテスト用の特別設定
   projects: [
     {
@@ -149,16 +142,12 @@ export default {
     },
     {
       displayName: 'integration',
-      testMatch: [
-        '<rootDir>/src/**/*.integration.test.{ts,tsx}',
-      ],
+      testMatch: ['<rootDir>/src/**/*.integration.test.{ts,tsx}'],
       testTimeout: 60000,
     },
     {
       displayName: 'security',
-      testMatch: [
-        '<rootDir>/src/**/*.security.test.{ts,tsx}',
-      ],
+      testMatch: ['<rootDir>/src/**/*.security.test.{ts,tsx}'],
       testTimeout: 60000,
       setupFilesAfterEnv: [
         '<rootDir>/../../jest.setup.js',

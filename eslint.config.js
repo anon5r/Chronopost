@@ -4,6 +4,7 @@ import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
 import typescriptEslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
+import unusedImports from 'eslint-plugin-unused-imports';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -15,8 +16,8 @@ const compat = new FlatCompat({
   allConfig: js.configs.all,
 });
 
-
-export default [
+let config;
+config = [
   {
     ignores: [
       '**/node_modules/**',
@@ -26,19 +27,25 @@ export default [
       '**/.next/**',
       '**/out/**',
       '**/prisma/migrations/**',
+      '**/prisma/seed.ts',
       '**/*.d.ts',
       'packages/shared/dist/**',
+      'jest.setup.js',
+      'jest.global-setup.js',
+      'jest.global-teardown.js',
+      'packages/frontend/vite.config.ts',
     ],
   },
-
+  
   // Base JavaScript configuration
   ...fixupConfigRules(compat.extends('eslint:recommended')),
-
+  
   // TypeScript configuration
   {
     files: ['**/*.ts', '**/*.tsx'],
     plugins: {
       '@typescript-eslint': typescriptEslint,
+      'unused-imports': unusedImports,
     },
     languageOptions: {
       parser: tsParser,
@@ -51,11 +58,15 @@ export default [
     },
     rules: {
       // TypeScript specific rules
-      '@typescript-eslint/no-unused-vars': [
-        'error',
+      '@typescript-eslint/no-unused-vars': ['off'],
+      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-vars': [
+        'warn',
         {
-          argsIgnorePattern: '^_',
+          vars: 'all',
           varsIgnorePattern: '^_',
+          args: 'after-used',
+          argsIgnorePattern: '^_',
           caughtErrorsIgnorePattern: '^_',
         },
       ],
@@ -69,7 +80,7 @@ export default [
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/await-thenable': 'error',
       '@typescript-eslint/require-await': 'error',
-
+      
       // Import rules
       'no-duplicate-imports': 'error',
       'sort-imports': [
@@ -81,9 +92,9 @@ export default [
           memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
         },
       ],
-
+      
       // General code quality
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['warn', {allow: ['warn', 'error']}],
       'no-debugger': 'error',
       'no-alert': 'error',
       'prefer-const': 'error',
@@ -92,7 +103,7 @@ export default [
       'prefer-arrow-callback': 'error',
       'prefer-template': 'error',
       'template-curly-spacing': ['error', 'never'],
-
+      
       // Security rules for Bluesky OAuth
       'no-eval': 'error',
       'no-implied-eval': 'error',
@@ -102,17 +113,17 @@ export default [
       // Performance
       'no-await-in-loop': 'warn',
       'prefer-regex-literals': 'error',
-
+      
       // Code style
-      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      eqeqeq: ['error', 'always', {null: 'ignore'}],
       curly: ['error', 'all'],
-      'brace-style': ['error', '1tbs', { allowSingleLine: false }],
+      'brace-style': ['error', '1tbs', {allowSingleLine: false}],
       'comma-dangle': ['error', 'always-multiline'],
       semi: ['error', 'always'],
-      quotes: ['error', 'single', { avoidEscape: true }],
+      quotes: ['error', 'single', {avoidEscape: true}],
     },
   },
-
+  
   // Backend specific rules
   {
     files: ['packages/backend/**/*.ts'],
@@ -122,17 +133,16 @@ export default [
       'no-process-env': 'off', // Allow process.env in backend
     },
   },
-
+  
   // Frontend specific rules
   {
     files: ['packages/frontend/**/*.ts', 'packages/frontend/**/*.tsx'],
     rules: {
-      'no-console': ['error', { allow: ['warn', 'error'] }],
+      'no-console': ['error', {allow: ['warn', 'error']}],
       '@typescript-eslint/no-floating-promises': 'warn',
     },
-    
   },
-
+  
   // Shared package rules
   {
     files: ['packages/shared/**/*.ts'],
@@ -142,7 +152,7 @@ export default [
       '@typescript-eslint/explicit-module-boundary-types': 'error',
     },
   },
-
+  
   // Test files
   {
     files: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts'],
@@ -165,13 +175,13 @@ export default [
       'no-console': 'off',
     },
   },
-
+  
   // Configuration files
   {
     files: [
       '*.config.js',
       '*.config.ts',
-      'eslint.config.js',
+      'eslint.config.ts',
       'vite.config.ts',
       'vitest.config.ts',
       'prettier.config.js',
@@ -197,7 +207,7 @@ export default [
       '@typescript-eslint/no-var-requires': 'off',
     },
   },
-
+  
   // Prisma schema files
   {
     files: ['prisma/schema.prisma'],
@@ -206,3 +216,5 @@ export default [
     },
   },
 ];
+
+export default config;

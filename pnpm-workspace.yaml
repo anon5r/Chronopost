@@ -2,15 +2,15 @@
 
 packages:
   # メインパッケージ
-  - 'packages/*'
-  
+  - "packages/*"
+
   # 除外するディレクトリ
-  - '!**/node_modules/**'
-  - '!**/dist/**'
-  - '!**/build/**'
-  - '!**/out/**'
-  - '!**/.next/**'
-  - '!**/coverage/**'
+  - "!**/node_modules/**"
+  - "!**/dist/**"
+  - "!**/build/**"
+  - "!**/out/**"
+  - "!**/.next/**"
+  - "!**/coverage/**"
 
 # pnpm設定
 catalog:
@@ -22,38 +22,38 @@ catalog:
   "@prisma/client": "^5.18.0"
   "jose": "^5.6.3"
   "zod": "^3.23.8"
-  
+
   # Phase 1: OAuth & セキュリティ
   "crypto": "latest"
   "uuid": "^10.0.0"
   "bcryptjs": "^2.4.3"
-  
+
   # Phase 1: 開発・テスト
   "jest": "^29.7.0"
   "ts-jest": "^29.2.5"
   "supertest": "^7.0.0"
   "@types/jest": "^29.5.12"
   "@types/supertest": "^6.0.2"
-  
+
   # Phase 1: リンティング・フォーマット
   "eslint": "^9.9.1"
   "prettier": "^3.3.3"
   "@typescript-eslint/eslint-plugin": "^8.3.0"
   "@typescript-eslint/parser": "^8.3.0"
-  
+
   # Phase 2: スレッド機能（将来）
   # - 追加依存関係なし（既存ライブラリで実装）
-  
+
   # Phase 3: メディア処理（将来）
-  "sharp": "^0.33.5"           # 画像処理
-  "multer": "^1.4.5"           # ファイルアップロード
-  "mime-types": "^2.1.35"      # MIMEタイプ検出
-  "file-type": "^19.4.0"       # ファイル形式検出
-  
+  "sharp": "^0.33.5" # 画像処理
+  "multer": "^1.4.5" # ファイルアップロード
+  "mime-types": "^2.1.35" # MIMEタイプ検出
+  "file-type": "^19.4.0" # ファイル形式検出
+
   # Phase 4: 高度な機能（将来）
-  "stripe": "^16.8.0"          # 決済処理
-  "nodemailer": "^6.9.14"      # メール送信
-  "ffmpeg": "^0.0.4"           # 動画処理
+  "stripe": "^16.8.0" # 決済処理
+  "nodemailer": "^6.9.14" # メール送信
+  "ffmpeg": "^0.0.4" # 動画処理
 
 # 共有設定
 shared-workspace-lockfile: true

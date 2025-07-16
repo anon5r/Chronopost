@@ -1,0 +1,17 @@
+# Jest setup files
+jest.setup.js
+jest.global-setup.js
+jest.global-teardown.js
+
+# Build output
+dist/
+build/
+coverage/
+node_modules/
+
+# Frontend build output
+packages/frontend/out/
+packages/frontend/.next/
+
+# Vite config
+packages/frontend/vite.config.ts

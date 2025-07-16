@@ -5,20 +5,20 @@
 export default {
   // Use TypeScript preset
   preset: 'ts-jest/presets/default-esm',
-  
+
   // Test environment
   testEnvironment: 'node',
-  
+
   // Enable ESM support
   extensionsToTreatAsEsm: ['.ts'],
-  
+
   // Module name mapping for path aliases
   moduleNameMapper: {
     '^@shared/(.*)$': '<rootDir>/packages/shared/src/$1',
     '^@backend/(.*)$': '<rootDir>/packages/backend/src/$1',
     '^@frontend/(.*)$': '<rootDir>/packages/frontend/src/$1',
   },
-  
+
   // Test file patterns
   testMatch: [
     '<rootDir>/packages/**/src/**/__tests__/**/*.test.ts',
@@ -26,19 +26,13 @@ export default {
     '<rootDir>/packages/**/*.test.ts',
     '<rootDir>/packages/**/*.spec.ts',
   ],
-  
+
   // Files to ignore
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    '/dist/',
-    '/build/',
-    '/coverage/',
-    '/.next/',
-  ],
-  
+  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/build/', '/coverage/', '/.next/'],
+
   // Module file extensions
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  
+
   // Transform settings
   transform: {
     '^.+\\.ts$': [
@@ -55,15 +49,15 @@ export default {
       },
     ],
   },
-  
+
   // Setup files
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  
+
   // Coverage configuration
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html', 'json'],
-  
+
   coveragePathIgnorePatterns: [
     '/node_modules/',
     '/dist/',
@@ -75,7 +69,7 @@ export default {
     'jest.config.js',
     'jest.setup.js',
   ],
-  
+
   // Coverage thresholds
   coverageThreshold: {
     global: {
@@ -104,7 +98,7 @@ export default {
       statements: 85,
     },
   },
-  
+
   // Files to collect coverage from
   collectCoverageFrom: [
     'packages/*/src/**/*.ts',
@@ -115,27 +109,27 @@ export default {
     '!packages/backend/src/index.ts',
     '!packages/frontend/src/main.ts',
   ],
-  
+
   // Test timeout
   testTimeout: 30000,
-  
+
   // Global setup/teardown
   globalSetup: '<rootDir>/jest.global-setup.js',
   globalTeardown: '<rootDir>/jest.global-teardown.js',
-  
+
   // Verbose output
   verbose: true,
-  
+
   // Clear mocks
   clearMocks: true,
   restoreMocks: true,
-  
+
   // Error handling
   errorOnDeprecated: true,
-  
+
   // Max workers for parallel testing
   maxWorkers: '50%',
-  
+
   // Project configurations for different packages
   projects: [
     {
@@ -156,7 +150,7 @@ export default {
       setupFilesAfterEnv: ['<rootDir>/packages/frontend/jest.setup.js'],
     },
   ],
-  
+
   // Reporters
   reporters: [
     'default',
@@ -173,10 +167,10 @@ export default {
       },
     ],
   ],
-  
+
   // Watch mode
   watchPathIgnorePatterns: ['/node_modules/', '/dist/', '/build/'],
-  
+
   // Cache
   cacheDirectory: '<rootDir>/.jest-cache',
 };

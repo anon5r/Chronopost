@@ -20,6 +20,9 @@
     ],
     "baseUrl": ".",
     "paths": {
+      "@chronopost/shared/*": ["packages/shared/src/*"],
+      "@chronopost/backend/*": ["packages/backend/src/*"],
+      "@chronopost/frontend/*": ["packages/frontend/src/*"],
       "@shared/*": ["packages/shared/src/*"],
       "@backend/*": ["packages/backend/src/*"],
       "@frontend/*": ["packages/frontend/src/*"]
@@ -55,7 +58,7 @@
     "removeComments": false,
 
     // Advanced
-    "skipDefaultLibCheck": true,
+    "skipDefaultLibCheck": true
   },
   "include": [
     "packages/*/src/**/*",
