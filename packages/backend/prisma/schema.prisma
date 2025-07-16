@@ -1,0 +1,255 @@
+// Chronopost Database Schema
+// Prisma Schema for OAuth-enabled Bluesky Post Scheduler
+// Phase 1: MVP implementation with security-first approach
+
+generator client {
+  provider = "prisma-client-js"
+  // セキュリティ強化: クエリエンジンの設定
+  engineType = "binary"
+  binaryTargets = ["native", "linux-musl"]
+  // パフォーマンス最適化
+  previewFeatures = ["relationJoins", "omitApi"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // 接続プール設定（セキュリティとパフォーマンス）
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// Phase 1: ユーザー管理
+model User {
+  id          String   @id @default(cuid())
+  // Bluesky識別子
+  did         String   @unique // AT Protocol DID
+  handle      String   @unique // Bluesky handle
+  displayName String?
+  
+  // 管理フィールド
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isActive    Boolean  @default(true)
+  lastLoginAt DateTime?
+  
+  // セキュリティ関連
+  isBlocked   Boolean  @default(false)
+  blockReason String?
+  
+  // リレーション
+  sessions    OAuthSession[]
+  posts       ScheduledPost[]
+  
+  // Phase 3以降で追加予定
+  // mediaFiles  MediaFile[]
+  // plan        UserPlan?
+  
+  @@map("users")
+  @@index([did])
+  @@index([handle])
+  @@index([isActive, createdAt])
+}
+
+// Phase 1: OAuth セッション管理（セキュリティ重視）
+model OAuthSession {
+  id               String   @id @default(cuid())
+  userId           String
+  
+  // 暗号化されたトークン（アプリケーションレベルで暗号化）
+  accessToken      String   @db.Text  // encrypted
+  refreshToken     String   @db.Text  // encrypted
+  
+  // DPoP キーペア（セッション専用）
+  dPopPrivateKey   String   @db.Text  // encrypted
+  dPopPublicKey    String   @db.Text
+  dPopKeyId        String   // JWK kid
+  
+  // トークン有効期限
+  expiresAt        DateTime
+  refreshExpiresAt DateTime
+  
+  // セッション管理
+  isActive         Boolean  @default(true)
+  lastUsedAt       DateTime @default(now())
+  userAgent        String?
+  ipAddress        String?
+  
+  // セキュリティ
+  revokedAt        DateTime?
+  revokeReason     String?
+  
+  // リレーション
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("oauth_sessions")
+  @@index([userId, isActive])
+  @@index([expiresAt])
+  @@index([refreshExpiresAt])
+}
+
+// Phase 1-2: 投稿管理（段階的拡張対応）
+model ScheduledPost {
+  id          String     @id @default(cuid())
+  userId      String
+  
+  // 投稿内容
+  content     String     @db.Text
+  scheduledAt DateTime
+  status      PostStatus @default(PENDING)
+  
+  // Phase 2: スレッド機能（将来実装）
+  parentPostId     String?
+  threadRootId     String?
+  threadIndex      Int      @default(0)
+  isThreadRoot     Boolean  @default(true)
+  dependsOnPostId  String?
+  canExecute       Boolean  @default(true)
+  
+  // Phase 3: リッチコンテンツ（将来実装）
+  hasMedia      Boolean @default(false)
+  hasLinkCard   Boolean @default(false)
+  langs         String[]
+  
+  // 実行管理
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  executedAt  DateTime?
+  errorMsg    String?  @db.Text
+  retryCount  Int      @default(0)
+  
+  // Bluesky投稿情報
+  blueskyUri  String?  // AT URI
+  blueskyRkey String?  // Record Key
+  
+  // セキュリティ
+  isDeleted   Boolean  @default(false)
+  deletedAt   DateTime?
+  
+  // リレーション
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Phase 2: スレッド関係（将来実装）
+  // parent           ScheduledPost? @relation("PostThread", fields: [parentPostId], references: [id])
+  // children         ScheduledPost[] @relation("PostThread")
+  // threadRoot       ScheduledPost? @relation("ThreadRoot", fields: [threadRootId], references: [id])
+  // threadPosts      ScheduledPost[] @relation("ThreadRoot")
+  // dependsOn        ScheduledPost? @relation("PostDependency", fields: [dependsOnPostId], references: [id])
+  // dependentPosts   ScheduledPost[] @relation("PostDependency")
+  
+  @@map("scheduled_posts")
+  @@index([scheduledAt, status])
+  @@index([userId, status])
+  @@index([status, canExecute]) // スケジューラー用
+  @@index([threadRootId, threadIndex]) // Phase 2用
+}
+
+// 投稿ステータス
+enum PostStatus {
+  PENDING     // 実行待ち
+  EXECUTING   // 実行中
+  COMPLETED   // 完了
+  FAILED      // 失敗
+  CANCELLED   // キャンセル
+  RETRYING    // リトライ中
+}
+
+// Phase 1: システム設定
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("system_configs")
+  @@index([key, isActive])
+}
+
+// Phase 1: 監査ログ（セキュリティ重視）
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String   // CREATE_POST, UPDATE_POST, LOGIN, etc.
+  entityType  String   // User, ScheduledPost, OAuthSession
+  entityId    String?
+  oldValues   Json?
+  newValues   Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  
+  @@map("audit_logs")
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@index([entityType, entityId])
+}
+
+// Phase 3以降で実装予定のテーブル（コメントアウト）
+
+// // Phase 3: メディアファイル管理
+// model MediaFile {
+//   id            String     @id @default(cuid())
+//   userId        String
+//   originalName  String
+//   storagePath   String     @unique
+//   mimeType      String
+//   fileSize      Int
+//   width         Int?
+//   height        Int?
+//   duration      Int?        // 動画用 (Phase 4)
+//   altText       String?
+//   isProcessed   Boolean    @default(false)
+//   blobRef       String?    // AT Protocol Blob参照
+//   blobSize      Int?
+//   
+//   createdAt     DateTime   @default(now())
+//   updatedAt     DateTime   @updatedAt
+//   
+//   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   postMedia     PostMedia[]
+//   
+//   @@map("media_files")
+//   @@index([userId, createdAt])
+//   @@index([isProcessed])
+// }
+
+// // Phase 3: 投稿-メディア関係
+// model PostMedia {
+//   id          String        @id @default(cuid())
+//   postId      String
+//   mediaId     String
+//   mediaIndex  Int           // 表示順序
+//   
+//   post        ScheduledPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+//   media       MediaFile     @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+//   
+//   @@unique([postId, mediaIndex])
+//   @@map("post_media")
+// }
+
+// // Phase 4: ユーザープラン
+// model UserPlan {
+//   id               String    @id @default(cuid())
+//   userId           String
+//   planType         PlanType  @default(FREE)
+//   mediaUploadQuota Int       @default(100)     // MB/月
+//   videoEnabled     Boolean   @default(false)
+//   maxPostsPerMonth Int       @default(1000)
+//   validUntil       DateTime?
+//   
+//   createdAt        DateTime  @default(now())
+//   updatedAt        DateTime  @updatedAt
+//   
+//   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   
+//   @@unique([userId])
+//   @@map("user_plans")
+// }
+
+// enum PlanType {
+//   FREE
+//   BASIC      // Phase 4
+//   PREMIUM    // Phase 4
+// }

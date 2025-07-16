@@ -1,0 +1,47 @@
+{
+  "name": "@chronopost/backend",
+  "version": "1.0.0",
+  "description": "Chronopost Backend API Server",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc && node scripts/copy-assets.js",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "jest --config jest.e2e.config.js",
+    "test:integration": "jest --config jest.integration.config.js",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:reset": "prisma migrate reset",
+    "db:validate": "prisma validate",
+    "db:seed": "tsx src/scripts/seed.ts",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.12.2",
+    "@prisma/client": "^5.19.1",
+    "hono": "^4.6.3",
+    "zod": "^3.23.8",
+    "jose": "^5.9.3",
+    "node-cron": "^3.0.3",
+    "@chronopost/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.0",
+    "@types/node-cron": "^3.0.11",
+    "dotenv": "^16.4.5",
+    "prisma": "^5.19.1",
+    "tsx": "^4.19.1",
+    "typescript": "^5.5.4"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
