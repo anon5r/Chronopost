@@ -78,7 +78,7 @@ export default [
       'no-bitwise': 'warn', // ビット演算は暗号化で使用する場合のみ許可
       
       // ファイルシステムセキュリティ
-      'no-path-concat': 'off', // Node.js環境では path.join() を推奨
+      'no-path-concat': 'error', // Node.js環境では path.join() を推奨
     },
   },
   
