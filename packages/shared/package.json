@@ -1,22 +1,32 @@
 {
-  "name": "@chronopost/shared",
+  "name": "shared",
   "version": "1.0.0",
-  "description": "Chronopost Shared Types and Utilities",
+  "description": "Shared types and utilities for Chronopost",
+  "private": true,
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "dev": "tsc --watch",
-    "build": "tsc",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix"
+    "build": "tsc -p tsconfig.json",
+    "test": "jest",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --write \"**/*.{ts,json,md}\"",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.12",
     "@types/node": "^22.5.0",
     "typescript": "^5.5.4"
-  },
-  "engines": {
-    "node": ">=22.0.0"
   }
 }

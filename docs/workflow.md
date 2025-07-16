@@ -5,6 +5,7 @@
 ## 1. OAuth認証フロー
 
 ### 要件
+
 - AT Protocol OAuth 2.0 + DPoP認証
 - PKCE（Proof Key for Code Exchange）必須
 - コンフィデンシャルクライアント実装
@@ -20,7 +21,7 @@ sequenceDiagram
     participant M as Metadata Endpoint
     participant O as OAuth Server
     participant P as PDS (Personal Data Server)
-    
+
     Note over U,P: Phase 1: OAuth Discovery & Setup
     U->>C: ログインリクエスト
     C->>A: OAuth認証開始
@@ -28,19 +29,19 @@ sequenceDiagram
     A->>A: DPoP Key Pair生成 (ES256)
     A->>M: Client Metadata確認
     M->>A: Client Metadata返却
-    
+
     Note over U,P: Phase 2: Authorization Request
     A->>O: PAR (Pushed Authorization Request)
     Note right of A: client_id, code_challenge,<br/>redirect_uri, scope, DPoP proof
     O->>A: request_uri返却
     A->>C: Authorization URL返却
     C->>U: OAuth画面リダイレクト
-    
+
     Note over U,P: Phase 3: User Authorization
     U->>O: 認証・認可
     O->>C: 認可コード返却 (callback)
     C->>A: 認可コード送信
-    
+
     Note over U,P: Phase 4: Token Exchange
     A->>O: Token Request
     Note right of A: grant_type=authorization_code<br/>code, code_verifier, DPoP proof
@@ -62,7 +63,7 @@ graph TD
     F -->|Yes| G[Server Nonceを取得]
     G --> C
     F -->|No| H[Request成功]
-    
+
     subgraph "DPoP Proof構造"
         I[Header: alg=ES256, typ=dpop+jwt, jwk]
         J[Payload: jti, htm, htu, iat, nonce]
@@ -80,7 +81,7 @@ graph TD
     B --> C{認証済み?}
     C -->|No| D[ログイン画面へ]
     C -->|Yes| E[投稿作成フォーム表示]
-    
+
     E --> F[投稿内容入力]
     F --> G[予約日時設定]
     G --> H[投稿内容バリデーション]
@@ -90,7 +91,7 @@ graph TD
     I -->|Yes| K[データベース保存]
     K --> L[保存完了通知]
     L --> M[投稿一覧画面表示]
-    
+
     subgraph "バリデーション項目"
         N[文字数制限: 300文字]
         O[予約時刻: 未来の時刻]
@@ -106,18 +107,18 @@ graph TD
     A[投稿作成開始] --> B{スレッド投稿?}
     B -->|No| C[単体投稿作成]
     B -->|Yes| D[スレッドルート投稿作成]
-    
+
     D --> E[リプライ投稿追加]
     E --> F[親子関係設定]
     F --> G[実行順序番号設定]
     G --> H{さらにリプライ追加?}
     H -->|Yes| E
     H -->|No| I[スレッド全体保存]
-    
+
     C --> J[データベース保存]
     I --> J
     J --> K[保存完了]
-    
+
     subgraph "スレッド構造例"
         L["Root Post (index: 0)"]
         M["├─ Reply 1 (index: 1)"]
@@ -136,20 +137,20 @@ graph TD
     D --> E[メディア処理]
     E --> F[Alt Text設定]
     F --> G[メディア情報保存]
-    
+
     C -->|No| H{URL含む?}
     G --> H
     H -->|Yes| I[OGP情報取得]
     I --> J[リンクカード生成]
     J --> K[リンクカード保存]
-    
+
     H -->|No| L[テキスト解析]
     K --> L
     L --> M[メンション抽出]
     M --> N[ハッシュタグ抽出]
     N --> O[エンティティ保存]
     O --> P[最終データ保存]
-    
+
     subgraph "メディア処理"
         Q[画像: リサイズ・最適化]
         R[動画: エンコード・サムネイル]
@@ -168,16 +169,16 @@ graph TD
     C -->|Yes| D[スキップ]
     C -->|No| E[実行ロック取得]
     E --> F[実行対象投稿検索]
-    
+
     F --> G[対象投稿取得]
     G --> H{投稿あり?}
     H -->|No| I[ロック解放]
     H -->|Yes| J[投稿実行処理]
-    
+
     J --> K[全投稿処理完了]
     K --> I
     I --> L[次回実行待機]
-    
+
     subgraph "検索条件"
         M[status = PENDING]
         N[scheduledAt <= 現在時刻]
@@ -194,23 +195,23 @@ sequenceDiagram
     participant T as Token Manager
     participant B as Bluesky API
     participant D as Database
-    
+
     Note over S,D: Phase 1: 前処理
     S->>D: 投稿ステータス更新 (EXECUTING)
     S->>T: アクセストークン確認
     T->>T: トークン有効期限チェック
-    
+
     alt トークン期限切れ
         T->>B: リフレッシュトークン使用
         B->>T: 新しいアクセストークン
         T->>D: 新トークン暗号化保存
     end
-    
+
     Note over S,D: Phase 2: 投稿実行
     S->>B: DPoP Proof生成
     S->>B: 投稿API呼び出し
     B->>S: 投稿結果返却
-    
+
     alt 成功
         S->>D: ステータス更新 (COMPLETED)
         S->>D: 実行時刻・URI保存
@@ -244,7 +245,7 @@ graph TD
     L --> M{実行成功?}
     M -->|No| N[残り投稿キャンセル]
     M -->|Yes| H
-    
+
     subgraph "エラーハンドリング"
         O[親投稿失敗 → 子投稿全てキャンセル]
         P[中間投稿失敗 → 後続投稿キャンセル]
@@ -263,7 +264,7 @@ graph TD
     C -->|期限内| D[トークン使用]
     C -->|期限切れ近い| E[バックグラウンドリフレッシュ]
     C -->|期限切れ| F[同期リフレッシュ]
-    
+
     E --> G[リフレッシュ実行]
     F --> G
     G --> H{リフレッシュ成功?}
@@ -272,7 +273,7 @@ graph TD
     I --> D
     J --> K[セッション無効化]
     K --> L[再認証要求]
-    
+
     subgraph "同時リフレッシュ防止"
         M[Mutex Lock使用]
         N[進行中チェック]
@@ -293,12 +294,12 @@ stateDiagram-v2
     EXPIRED --> [*]: セッション削除
     ACTIVE --> REVOKED: ユーザーが無効化
     REVOKED --> [*]: セッション削除
-    
+
     note right of ACTIVE
         定期的なトークンリフレッシュ
         API使用によるlastUsedAt更新
     end note
-    
+
     note right of EXPIRED
         再認証が必要
         依存する予約投稿は失敗扱い
@@ -321,23 +322,23 @@ graph TD
     G -->|No| I{サーバーエラー?}
     I -->|Yes| J[短時間後リトライ]
     I -->|No| K[致命的エラー]
-    
+
     D --> L{リトライ上限?}
     F --> M{リフレッシュ成功?}
     H --> L
     J --> L
     K --> N[エラーログ記録]
-    
+
     L -->|No| O[次回リトライスケジュール]
     L -->|Yes| N
     M -->|Yes| P[元処理リトライ]
     M -->|No| N
-    
+
     N --> Q[ユーザー通知]
     O --> R[処理継続]
     P --> R
     Q --> S[処理終了]
-    
+
     subgraph "リトライ戦略"
         T[1回目: 30秒後]
         U[2回目: 2分後]
@@ -364,7 +365,7 @@ graph TD
     J -->|Yes| K[クライアント側リサイズ]
     J -->|No| D
     K --> H
-    
+
     H --> L[サーバー側処理開始]
     L --> M[ウイルススキャン]
     M --> N{安全?}
@@ -373,7 +374,7 @@ graph TD
     P --> Q[Alt Text入力待機]
     Q --> R[メタデータ保存]
     R --> S[Blob作成準備]
-    
+
     subgraph "画像最適化処理"
         T[EXIF削除]
         U[形式統一: WebP/JPEG]
@@ -393,7 +394,7 @@ graph TD
     E --> F{制限内?}
     F -->|No| G[容量不足通知]
     F -->|Yes| H[アップロード開始]
-    
+
     H --> I[チャンク分割アップロード]
     I --> J[サーバー側結合]
     J --> K[形式・コーデックチェック]
@@ -404,7 +405,7 @@ graph TD
     N --> O[サムネイル生成]
     O --> P[プレビュー作成]
     P --> Q[Blob準備完了]
-    
+
     subgraph "動画処理"
         R[H.264エンコード]
         S[解像度調整]
@@ -431,12 +432,12 @@ graph TD
     J --> K{復旧成功?}
     K -->|Yes| L[正常復帰ログ]
     K -->|No| M[緊急対応要請]
-    
+
     G --> N[定期レポート生成]
     L --> N
     M --> O[緊急メンテナンス]
     N --> B
-    
+
     subgraph "監視項目"
         P[API応答時間]
         Q[投稿成功率]
@@ -457,7 +458,7 @@ graph TD
     D -->|INFO| F[標準ログ]
     D -->|WARN| G[警告ログ]
     D -->|ERROR| H[エラーログ]
-    
+
     F --> I[ローテーション]
     G --> I
     H --> J[即座にアラート]
@@ -465,7 +466,7 @@ graph TD
     I --> K[ログ保存]
     K --> L[検索インデックス]
     L --> M[分析・集計]
-    
+
     subgraph "機密情報除外"
         N[トークンマスク]
         O[パスワード除外]
@@ -495,7 +496,7 @@ graph TD
     N --> O{成功?}
     O -->|No| P[緊急ロールバック]
     O -->|Yes| Q[サービス再開]
-    
+
     E --> C
     I --> R[問題調査]
     P --> S[障害対応]
@@ -516,7 +517,7 @@ graph TD
     G --> H[ログファイルローテーション]
     H --> I[統計情報更新]
     I --> J[クリーンアップ完了]
-    
+
     subgraph "削除対象"
         K[30日以上前の完了投稿]
         L[7日以上前の失敗投稿]
@@ -547,7 +548,7 @@ graph TD
     N -->|main| O[本番デプロイ]
     N -->|staging| P[ステージングデプロイ]
     N -->|other| Q[テスト環境デプロイ]
-    
+
     O --> R[ヘルスチェック]
     P --> R
     Q --> R
@@ -577,7 +578,7 @@ graph TD
     K --> L{安全?}
     L -->|No| M[不正入力拒否]
     L -->|Yes| N[処理実行]
-    
+
     D --> O[ログ記録]
     G --> O
     J --> O
@@ -586,7 +587,7 @@ graph TD
     P --> Q{攻撃パターン?}
     Q -->|Yes| R[IP自動ブロック]
     Q -->|No| S[正常ログ]
-    
+
     subgraph "セキュリティ対策"
         T[SQL Injection防止]
         U[XSS防止]

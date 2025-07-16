@@ -5,12 +5,14 @@
 ## 設計方針
 
 ### 段階的実装アプローチ
+
 1. **Phase 1**: シンプルなテキスト投稿の予約機能
-2. **Phase 2**: スレッド形式投稿・基本的なリッチテキスト対応  
+2. **Phase 2**: スレッド形式投稿・基本的なリッチテキスト対応
 3. **Phase 3**: 画像添付・リンクカード・メンション・ハッシュタグ
 4. **Phase 4**: 動画投稿・スレッドゲート・高度な機能
 
 ### 技術制約
+
 - BlueskyのAT Protocol準拠
 - OAuth + DPoP認証必須
 - PostgreSQL + Prisma ORM
@@ -19,6 +21,7 @@
 ## Phase 1: 基本実装
 
 ### 要件
+
 - ユーザーは1つまたは複数のOAuthセッションを持つ
 - ユーザーは複数のテキスト投稿を予約できる
 - システムは指定時刻に投稿を自動実行する
@@ -37,11 +40,11 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   isActive    Boolean  @default(true)
-  
+
   // リレーション
   sessions    OAuthSession[]
   posts       ScheduledPost[]
-  
+
   @@map("users")
 }
 
@@ -58,15 +61,15 @@ model OAuthSession {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   isActive         Boolean  @default(true)
-  
+
   // メタデータ
   userAgent        String?
   ipAddress        String?
   lastUsedAt       DateTime @default(now())
-  
+
   // リレーション
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@index([userId, isActive])
   @@index([expiresAt])
   @@map("oauth_sessions")
@@ -84,14 +87,14 @@ model ScheduledPost {
   executedAt  DateTime?                // 実行完了時刻
   errorMsg    String?                  // エラーメッセージ
   retryCount  Int        @default(0)   // リトライ回数
-  
+
   // AT Protocol関連
   blueskyUri  String?                  // 投稿後のat://URI
   blueskyRkey String?                  // レコードキー
-  
+
   // リレーション
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@index([scheduledAt, status])
   @@index([userId, status])
   @@index([status, createdAt])
@@ -111,6 +114,7 @@ enum PostStatus {
 ## Phase 2: スレッド投稿対応
 
 ### 追加要件
+
 - 投稿のスレッド形式（親子関係）対応
 - リプライチェーンの実行順序保証
 - スレッド全体の実行状態管理
@@ -120,17 +124,17 @@ enum PostStatus {
 ```prisma
 model ScheduledPost {
   // Phase 1 のフィールド + 以下を追加
-  
+
   // スレッド関連
   parentPostId     String?              // 親投稿ID（リプライの場合）
   threadRootId     String?              // スレッドのルート投稿ID
   threadIndex      Int        @default(0) // スレッド内の順序
   isThreadRoot     Boolean    @default(true)
-  
+
   // 実行制御
   dependsOnPostId  String?              // 実行依存関係
   canExecute       Boolean    @default(true)
-  
+
   // リレーション
   parent           ScheduledPost? @relation("PostThread", fields: [parentPostId], references: [id])
   children         ScheduledPost[] @relation("PostThread")
@@ -138,7 +142,7 @@ model ScheduledPost {
   threadPosts      ScheduledPost[] @relation("ThreadRoot")
   dependsOn        ScheduledPost? @relation("PostDependency", fields: [dependsOnPostId], references: [id])
   dependentPosts   ScheduledPost[] @relation("PostDependency")
-  
+
   @@index([threadRootId, threadIndex])
   @@index([parentPostId])
 }
@@ -147,6 +151,7 @@ model ScheduledPost {
 ## Phase 3: リッチコンテンツ対応
 
 ### 追加要件
+
 - 画像・動画の添付
 - URLリンクカードのプレビュー
 - ハッシュタグ・@メンションの解析
@@ -170,15 +175,15 @@ model MediaFile {
   isProcessed   Boolean    @default(false) // 処理完了フラグ
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
-  
+
   // AT Protocol Blob関連
   blobRef       String?                 // Bluesky Blob参照
   blobSize      Int?                    // Blob サイズ
-  
-  // リレーション  
+
+  // リレーション
   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   postMedia     PostMedia[]
-  
+
   @@index([userId, createdAt])
   @@index([isProcessed])
   @@map("media_files")
@@ -191,11 +196,11 @@ model PostMedia {
   mediaFileId  String
   mediaIndex   Int           @default(0) // 表示順序
   createdAt    DateTime      @default(now())
-  
+
   // リレーション
   post         ScheduledPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   mediaFile    MediaFile     @relation(fields: [mediaFileId], references: [id], onDelete: Cascade)
-  
+
   @@unique([postId, mediaFileId])
   @@index([postId, mediaIndex])
   @@map("post_media")
@@ -212,10 +217,10 @@ model LinkCard {
   siteName    String?                   // サイト名
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  
+
   // リレーション
   post        ScheduledPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
+
   @@unique([postId])
   @@map("link_cards")
 }
@@ -230,10 +235,10 @@ model PostEntity {
   endPos    Int                         // 終了位置
   value     String?                     // 実際の値（DID, URL等）
   createdAt DateTime      @default(now())
-  
+
   // リレーション
   post      ScheduledPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
+
   @@index([postId, type])
   @@map("post_entities")
 }
@@ -247,12 +252,12 @@ enum EntityType {
 // ScheduledPost にフィールド追加
 model ScheduledPost {
   // 既存フィールド + 以下を追加
-  
+
   // リッチコンテンツ
   hasMedia      Boolean @default(false)   // メディア添付有無
   hasLinkCard   Boolean @default(false)   // リンクカード有無
   langs         String[]                  // 言語設定
-  
+
   // リレーション
   media         PostMedia[]
   linkCard      LinkCard?
@@ -263,6 +268,7 @@ model ScheduledPost {
 ## Phase 4: 高度な機能
 
 ### 追加要件
+
 - 動画投稿（有料オプション）
 - スレッドゲート（返信制限）
 - 投稿分析・統計
@@ -279,10 +285,10 @@ model ThreadGate {
   allowFollowing   Boolean       @default(true)  // フォロー中ユーザー
   allowListMembers String[]                      // 特定リストのメンバー
   createdAt        DateTime      @default(now())
-  
+
   // リレーション
   post             ScheduledPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
+
   @@unique([postId])
   @@map("thread_gates")
 }
@@ -296,10 +302,10 @@ model PostAnalytics {
   replies      Int           @default(0)
   impressions  Int           @default(0)
   lastUpdated  DateTime      @default(now())
-  
+
   // リレーション
   post         ScheduledPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
+
   @@unique([postId])
   @@map("post_analytics")
 }
@@ -315,10 +321,10 @@ model UserPlan {
   validUntil       DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-  
+
   // リレーション
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@unique([userId])
   @@map("user_plans")
 }
@@ -338,16 +344,16 @@ erDiagram
     User ||--o{ ScheduledPost : "creates"
     User ||--o{ MediaFile : "uploads"
     User ||--|| UserPlan : "has"
-    
+
     ScheduledPost ||--o{ PostMedia : "contains"
     ScheduledPost ||--o| LinkCard : "has"
     ScheduledPost ||--o{ PostEntity : "contains"
     ScheduledPost ||--o| ThreadGate : "has"
     ScheduledPost ||--o| PostAnalytics : "tracks"
     ScheduledPost ||--o{ ScheduledPost : "parent-child"
-    
+
     MediaFile ||--o{ PostMedia : "attached"
-    
+
     User {
         string id PK
         string did UK "AT Protocol DID"
@@ -357,7 +363,7 @@ erDiagram
         datetime updatedAt
         boolean isActive
     }
-    
+
     OAuthSession {
         string id PK
         string userId FK
@@ -369,7 +375,7 @@ erDiagram
         datetime refreshExpiresAt
         boolean isActive
     }
-    
+
     ScheduledPost {
         string id PK
         string userId FK
@@ -382,7 +388,7 @@ erDiagram
         boolean hasMedia
         boolean hasLinkCard
     }
-    
+
     MediaFile {
         string id PK
         string userId FK
@@ -400,22 +406,26 @@ erDiagram
 ## 実装優先度
 
 ### Phase 1 (MVP): 2-3週間
+
 - [ ] User, OAuthSession, ScheduledPost (基本)
 - [ ] テキスト投稿のみ
 - [ ] 基本的なスケジューラー
 
-### Phase 2: 2-3週間  
+### Phase 2: 2-3週間
+
 - [ ] スレッド投稿対応
 - [ ] 親子関係の実行制御
 - [ ] エラーハンドリング強化
 
 ### Phase 3: 3-4週間
+
 - [ ] MediaFile, PostMedia, LinkCard
 - [ ] 画像アップロード
 - [ ] OGPプレビュー
 - [ ] メンション・ハッシュタグ解析
 
 ### Phase 4: 4-6週間
+
 - [ ] 動画対応（有料オプション）
 - [ ] ThreadGate
 - [ ] 分析機能
@@ -424,16 +434,19 @@ erDiagram
 ## セキュリティ考慮事項
 
 ### データ保護
+
 - 全てのOAuthトークンは暗号化保存
 - メディアファイルのアクセス制御
 - PII（個人識別情報）の適切な管理
 
 ### リソース制限
+
 - ファイルサイズ制限
 - アップロード頻度制限
 - プラン別機能制限
 
 ### AT Protocol準拠
+
 - Blob ストレージの適切な利用
 - Record 形式の準拠
 - DID の検証

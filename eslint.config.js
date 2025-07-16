@@ -15,7 +15,6 @@ const compat = new FlatCompat({
   allConfig: js.configs.all,
 });
 
-
 export default [
   {
     ignores: [
@@ -26,8 +25,13 @@ export default [
       '**/.next/**',
       '**/out/**',
       '**/prisma/migrations/**',
+      '**/prisma/seed.ts',
       '**/*.d.ts',
       'packages/shared/dist/**',
+      'jest.setup.js',
+      'jest.global-setup.js',
+      'jest.global-teardown.js',
+      'packages/frontend/vite.config.ts',
     ],
   },
 
@@ -98,7 +102,7 @@ export default [
       'no-implied-eval': 'error',
       'no-new-func': 'error',
       'no-script-url': 'error',
-      
+
       // Performance
       'no-await-in-loop': 'warn',
       'prefer-regex-literals': 'error',
@@ -130,7 +134,6 @@ export default [
       'no-console': ['error', { allow: ['warn', 'error'] }],
       '@typescript-eslint/no-floating-promises': 'warn',
     },
-    
   },
 
   // Shared package rules

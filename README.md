@@ -1,324 +1,153 @@
 # Chronopost
 
-Blueskyで予約投稿を実現するウェブアプリケーション
+BlueskyのOAuth認証を使用した予約投稿システム
 
 ## 概要
 
-このプロジェクトは、Bluesky（AT Protocol）を使用して、ユーザーが指定した日時に自動投稿を行う予約投稿システムです。
+Chronopostは、BlueskyソーシャルネットワークのユーザーがDPoP（Demonstrating Proof
+of
+Possession）を使用したOAuth認証によってログインし、投稿を予約できるシステムです。
 
-指定した時間に投稿を自動的に実行し、ユーザーが手動で投稿する手間を省きます。BlueskyのOAuth認証を利用し、セキュアな環境での運用を目指します。
-定期的な繰り返し投稿はサポートされません。
+## 主な機能
 
-### 主な機能
-
-#### Phase 1 (MVP) - 現在実装中
-- 🔐 **BlueskyのOAuth認証** - DPoP対応の安全な認証
-- 📝 **予約投稿管理** - テキスト投稿の作成・編集・削除・一覧表示
-- ⏰ **自動投稿実行** - 指定時刻での自動投稿
-- 📊 **投稿履歴管理** - 実行結果・エラーログの確認
-- 🔄 **セッション管理** - 認証状態の自動更新
-
-#### Phase 2 - スレッド投稿対応
-- 🧵 **スレッド投稿** - 親子関係を持つ投稿チェーン
-- 🔗 **リプライチェーン** - 実行順序保証付きスレッド投稿
-- ⚡ **依存関係管理** - 親投稿の成功/失敗による子投稿制御
-
-#### Phase 3 - リッチコンテンツ対応
-- 🖼️ **画像投稿** - 画像アップロード・最適化・Alt Text対応
-- 🔗 **リンクカード** - OGPプレビュー自動生成
-- 🏷️ **ハッシュタグ・メンション** - 自動解析・リンク生成
-- 📱 **リッチテキスト** - フォーマット対応
-
-#### Phase 4 - 高度な機能 (有料オプション含む)
-- 🎬 **動画投稿** - 動画アップロード・エンコード (有料)
-- 🛡️ **スレッドゲート** - 返信制限設定
-- 📈 **投稿分析** - いいね・リポスト・インプレッション分析
-- 💎 **プレミアム機能** - 容量増加・高度な分析・優先サポート
+- OAuth認証（AT Protocol OAuth with DPoP）
+- 予約投稿の作成・管理
+- cronベースのスケジューラーによる自動投稿
 
 ## 技術スタック
 
-### バックエンド
-- **Runtime**: Node.js 22
-- **Language**: TypeScript
-- **Framework**: Hono
-- **Database**: PostgreSQL + Prisma
-- **OAuth**: AT Protocol OAuth with DPoP
+- **バックエンド**: Node.js 22, TypeScript, Hono, PostgreSQL, Prisma
+- **フロントエンド**: React, TypeScript, Vite
+- **認証**: BlueskyのOAuth with DPoP
+- **コンテナ化**: Docker, Docker Compose
 
-### フロントエンド
-- **Framework**: Vite + Vue.js 3 / React
-- **Language**: TypeScript
-- **Styling**: CSS Modules / Tailwind CSS
+## 開発環境のセットアップ
 
-### 開発・運用
-- **Package Manager**: pnpm 10.13
-- **Container**: Docker
-- **CI/CD**: GitHub Actions
-- **Hosting**: Railway (Backend) + Vercel (Frontend)
+### 必要条件
 
-## プロジェクト構成
-
-```
-Chronopost/
-├── packages/
-│   ├── backend/          # API サーバー・スケジューラー
-│   ├── frontend/         # ウェブUI
-│   └── shared/           # 共通型定義・ユーティリティ
-├── docs/                 # ドキュメント
-│   ├── datastructure.md  # データ構造設計
-│   └── workflow.md       # 処理フロー設計
-└── scripts/              # 運用スクリプト
-```
-
-## 段階的開発計画
-
-### 実装フェーズ
-
-| フェーズ | 期間 | 主要機能 | 状態 |
-|---------|------|---------|------|
-| Phase 1 | 8-12週間 | OAuth認証・基本投稿・スケジューラー | 🚧 開発中 |
-| Phase 2 | 2-3週間 | スレッド投稿・親子関係 | 📋 計画中 |
-| Phase 3 | 3-4週間 | 画像・リンクカード・メンション | 📋 計画中 |
-| Phase 4 | 4-6週間 | 動画・分析・有料機能 | 🔮 将来計画 |
-
-詳細な設計については、以下のドキュメントを参照してください：
-- [データ構造設計](./docs/datastructure.md)
-- [ワークフロー設計](./docs/workflow.md)
-- [GitHub Actions CI/CD](./docs/github-actions.md)
-
-## 開発環境セットアップ
-
-### 前提条件
-
-- Node.js 22+
-- pnpm 10.13+
-- Docker & Docker Compose
+- Node.js 22
+- pnpm 10.13.0
 - PostgreSQL（ローカルまたはDocker）
 
-### 初期セットアップ
+### オプション1: PostgreSQLのみDockerで実行
+
+1. PostgreSQLをDockerで起動:
 
 ```bash
-# リポジトリクローン
-git clone https://github.com/anon5r/Chronopost.git
-cd Chronopost
+# PostgreSQLのみをDockerで起動
+docker compose up -d postgres
+```
 
-# 依存関係インストール
+2. 依存関係をインストール:
+
+```bash
+pnpm install
+```
+
+3. 環境変数の設定:
+
+```bash
+# backend/.envを編集（必要に応じて）
+```
+
+4. データベースのセットアップ:
+
+```bash
+pnpm db:generate
+pnpm db:migrate
+pnpm db:seed
+```
+
+5. 開発モードで起動:
+
+```bash
+pnpm dev
+```
+
+6. アプリケーションにアクセス:
+
+- フロントエンド: http://localhost:5173
+- バックエンドAPI: http://localhost:3000
+- ヘルスチェック: http://localhost:3000/health
+
+### オプション2: すべてDockerで実行
+
+1. リポジトリをクローン:
+
+```bash
+git clone https://github.com/yourusername/chronopost.git
+cd chronopost
+```
+
+2. 依存関係のインストールとビルド（先にローカルで依存関係を解決）:
+
+```bash
+pnpm install
+```
+
+3. コンテナをビルドして起動:
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+4. データベースの初期化:
+
+```bash
+docker compose --profile db-init up db-init
+```
+
+## 開発コマンド
+
+```bash
+# 依存関係のインストール
 pnpm install
 
-# 環境変数設定
-cp packages/backend/.env.example packages/backend/.env
-# .env ファイルを編集
-
-# データベース起動（Docker使用時）
-docker-compose up -d postgres
-
-# データベースマイグレーション
-pnpm db:migrate
-
-# 開発サーバー起動
-pnpm dev
-```
-
-### 環境変数設定
-
-`packages/backend/.env` に以下を設定：
-
-```bash
-# データベース
-DATABASE_URL="postgresql://dev:dev123@localhost:5432/chronopost"
-
-# OAuth設定
-CLIENT_ID="https://your-domain.com/.well-known/bluesky-oauth.json"
-CLIENT_SECRET="your-oauth-client-secret"
-
-# 暗号化キー
-ENCRYPTION_KEY="your-32-character-encryption-key"
-
-# フロントエンドURL
-FRONTEND_URL="http://localhost:5173"
-```
-
-## 利用方法
-
-### 1. OAuth認証設定
-
-Client Metadata を公開：
-- `packages/backend/public/.well-known/bluesky-oauth.json` を設定
-- HTTPSでアクセス可能なURLに配置
-
-### 2. アプリケーションの起動
-
-```bash
-# 開発環境（フロント・バック同時起動）
+# 開発モードで実行
 pnpm dev
 
-# バックエンドのみ
-pnpm dev:backend
+# データベース生成
+pnpm db:generate
 
-# フロントエンドのみ
-pnpm dev:frontend
-```
-
-### 3. 基本的な使用手順
-
-1. **認証**: Blueskyアカウントでログイン
-2. **投稿作成**: 投稿内容と予約日時を設定
-3. **自動実行**: スケジューラーが指定時刻に投稿実行
-4. **履歴確認**: 投稿結果・エラーログを確認
-
-### API エンドポイント
-
-#### Phase 1: 基本機能
-```
-認証
-├── GET /api/auth/oauth/authorize     # OAuth認証開始
-├── GET /api/auth/oauth/callback      # OAuth認証コールバック
-└── POST /api/auth/logout             # ログアウト
-
-投稿管理
-├── GET /api/posts                    # 予約投稿一覧
-├── POST /api/posts                   # 予約投稿作成
-├── PUT /api/posts/:id               # 予約投稿更新
-└── DELETE /api/posts/:id            # 予約投稿削除
-
-セッション管理
-├── GET /api/sessions                 # セッション一覧
-└── DELETE /api/sessions/:id         # セッション無効化
-```
-
-#### Phase 2以降: 拡張機能
-```
-スレッド投稿
-├── POST /api/posts/thread           # スレッド投稿作成
-└── GET /api/posts/:id/thread        # スレッド構造取得
-
-メディア管理 (Phase 3+)
-├── POST /api/media/upload           # メディアアップロード
-├── GET /api/media/:id               # メディア情報取得
-└── DELETE /api/media/:id            # メディア削除
-
-分析・統計 (Phase 4+)
-├── GET /api/analytics/posts         # 投稿分析
-└── GET /api/analytics/usage         # 使用量統計
-
-プラン管理 (Phase 4+)
-├── GET /api/plans                   # プラン一覧
-└── POST /api/plans/upgrade          # プラン変更
-```
-
-## デプロイ
-
-### 本番環境デプロイ
-
-```bash
-# ビルド
-pnpm build
-
-# データベースマイグレーション
+# マイグレーション実行
 pnpm db:migrate
 
-# 本番起動
-pnpm start
+# シードデータ投入
+pnpm db:seed
+
+# テスト実行
+pnpm test
+
+# リント
+pnpm lint
+
+# 型チェック
+pnpm type-check
 ```
 
-### Docker デプロイ
+## 実装フェーズ
 
-```bash
-# イメージビルド
-docker build -t chronopost-backend packages/backend
+プロジェクトは段階的に実装されています：
 
-# コンテナ実行
-docker run -p 3000:3000 \
-  -e DATABASE_URL="..." \
-  -e CLIENT_ID="..." \
-  chronopost-backend
+- **Phase 1**: OAuth認証・基本テキスト投稿・スケジューラー（現在の実装）
+- **Phase 2**: スレッド投稿・親子関係・依存関係管理（計画中）
+- **Phase 3**: 画像・リンクカード・メンション・ハッシュタグ（計画中）
+- **Phase 4**: 動画・分析・有料プラン・高度な機能（計画中）
+
+## ディレクトリ構造
+
 ```
-
-## 運用
-
-### スケジューラー
-
-投稿スケジューラーは毎分実行され、以下を行います：
-- 実行予定の投稿を検索
-- OAuth トークンの更新
-- Bluesky APIへの投稿実行
-- 結果の記録
-
-### ログ監視
-
-```bash
-# アプリケーションログ
-tail -f logs/app.log
-
-# 投稿実行ログ
-tail -f logs/scheduler.log
-```
-
-## トラブルシューティング
-
-### よくある問題
-
-#### Phase 1: 基本機能
-**OAuth認証エラー**
-- Client Metadata が正しく配置されているか確認
-- HTTPS でアクセス可能か確認
-- DPoP 設定を確認
-
-**投稿実行失敗**
-- トークンの有効期限を確認
-- Bluesky API の制限を確認
-- ネットワーク接続を確認
-
-**データベース接続エラー**
-- `DATABASE_URL` を確認
-- PostgreSQL が起動しているか確認
-
-#### Phase 2以降: 拡張機能
-**スレッド投稿エラー**
-- 親投稿の実行状態を確認
-- 依存関係の設定を確認
-- スレッド順序の設定を確認
-
-**メディアアップロードエラー (Phase 3+)**
-- ファイルサイズ制限を確認
-- サポート形式を確認
-- ストレージ容量を確認
-
-**プラン制限エラー (Phase 4+)**
-- 現在のプランの制限を確認
-- 使用量の確認
-- プラン升级の検討
-
-### ログの確認方法
-
-```bash
-# Phase 1: 基本ログ
-tail -f logs/app.log
-tail -f logs/scheduler.log
-
-# Phase 3+: メディア処理ログ
-tail -f logs/media.log
-
-# Phase 4+: 分析ログ
-tail -f logs/analytics.log
+chronopost/
+├── packages/
+│   ├── backend/      # バックエンドアプリケーション
+│   ├── frontend/     # フロントエンドアプリケーション
+│   └── shared/       # 共有型定義とユーティリティ
+├── scripts/          # 開発・デプロイスクリプト
+├── compose.yml       # Docker Compose設定
+└── Makefile          # 開発用コマンド集
 ```
 
 ## ライセンス
 
-MIT License
-
-## 貢献
-
-1. Issue を作成して議論
-2. Feature ブランチを作成
-3. 変更をコミット
-4. Pull Request を作成
-
-## サポート
-
-- **Issue**: GitHub Issues で報告
-- **Discussion**: GitHub Discussions で質問
-- **Security**: セキュリティ問題は非公開で報告
-
----
-
-詳細な開発ルールについては [CLAUDE.md](./CLAUDE.md) を参照してください。
+MIT

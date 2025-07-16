@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: chronopost-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: chronopost_dev
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./packages/backend/Dockerfile
+    container_name: chronopost-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/chronopost_dev
+      - PORT=3000
+      - NODE_ENV=development
+      - ENCRYPTION_KEY=this_is_a_very_long_secret_key_for_development_only_please_change_in_production
+      - CLIENT_ID=https://chronopost.example.com/.well-known/bluesky-oauth.json
+      - FRONTEND_URL=http://localhost:5173
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./packages/backend:/app/packages/backend
+      - ./packages/shared:/app/packages/shared
+      - /app/packages/backend/node_modules
+      - /app/packages/shared/node_modules
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./packages/frontend/Dockerfile
+    container_name: chronopost-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./packages/frontend:/app/packages/frontend
+      - ./packages/shared:/app/packages/shared
+      - /app/packages/frontend/node_modules
+      - /app/packages/shared/node_modules
+
+  # Database initialization service that runs once
+  db-init:
+    build:
+      context: .
+      dockerfile: ./packages/backend/Dockerfile
+    container_name: chronopost-db-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/chronopost_dev
+      - NODE_ENV=development
+    volumes:
+      - ./packages/backend:/app/packages/backend
+      - ./packages/shared:/app/packages/shared
+      - ./scripts/init-db.sh:/app/init-db.sh
+    command: sh -c "cd /app && ./init-db.sh"
+    profiles:
+      - db-init
+
+volumes:
+  postgres-data:

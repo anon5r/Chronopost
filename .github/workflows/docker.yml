@@ -3,7 +3,7 @@ name: Docker Build & Push
 on:
   push:
     branches: [main, develop]
-    tags: ['v*']
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
@@ -128,13 +128,13 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
-          format: 'sarif'
-          output: 'trivy-results-backend.sarif'
+          format: "sarif"
+          output: "trivy-results-backend.sarif"
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: 'trivy-results-backend.sarif'
+          sarif_file: "trivy-results-backend.sarif"
 
   # Deploy to container registry with multiple tags
   deploy-images:
@@ -158,7 +158,7 @@ jobs:
           docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }} \
                      ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:production
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:production
-          
+
           # Frontend
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
           docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }} \

@@ -11,13 +11,13 @@ declare global {
    * jest.setup.js で設定される
    */
   var testUtils: typeof testUtils;
-  
+
   /**
    * エラーキャプチャユーティリティ
    * テスト中のエラーをキャプチャして検証
    */
   var errorCapture: ReturnType<typeof createErrorCapture>;
-  
+
   /**
    * WebCrypto APIのモック
    * DPoP実装のテストで使用

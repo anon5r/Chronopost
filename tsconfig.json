@@ -55,7 +55,7 @@
     "removeComments": false,
 
     // Advanced
-    "skipDefaultLibCheck": true,
+    "skipDefaultLibCheck": true
   },
   "include": [
     "packages/*/src/**/*",

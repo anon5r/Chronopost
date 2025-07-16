@@ -125,7 +125,10 @@
         "react",
         "react-dom"
       ]
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "esbuild"
+    ]
   },
   "volta": {
     "node": "22.8.0",
