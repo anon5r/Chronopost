@@ -125,7 +125,7 @@ jobs:
       - name: Get changed files
         if: steps.check-claude.outputs.skip == 'false'
         id: changed-files
-        uses: tj-actions/changed-files@v41
+        uses: tj-actions/changed-files@v46
         with:
           files: |
             packages/**/*.ts
@@ -187,7 +187,7 @@ jobs:
       - name: Get changed files
         if: steps.check-gemini.outputs.skip == 'false'
         id: changed-files
-        uses: tj-actions/changed-files@v41
+        uses: tj-actions/changed-files@v46
         with:
           files: |
             packages/**/*.ts
