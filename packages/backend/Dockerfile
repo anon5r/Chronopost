@@ -12,6 +12,9 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/backend/package.json ./packages/backend/
 
+# Copy Prisma schema file needed for postinstall script
+COPY packages/backend/prisma ./packages/backend/prisma
+
 # Install dependencies using pnpm
 RUN pnpm install
 
