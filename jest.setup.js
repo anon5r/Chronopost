@@ -1,100 +1,105 @@
-// Chronopost - Jest Setup
-/* eslint-env node, jest */
-/* global console, process, global, beforeEach, afterEach, jest */
+/**
+ * Jest Setup for Chronopost
+ * 型安全で信頼性の高いテスト環境の構築
+ */
 
-import { jest as jestGlobal } from '@jest/globals';
+import { config } from 'dotenv';
+import path from 'path';
+import { testUtils, createWebCryptoMocks, createErrorCapture } from './packages/backend/src/test-utils/index';
 
-// Global test configuration
+// テスト用環境変数を.env.testから読み込み
+config({ path: path.resolve(process.cwd(), 'packages/backend/.env.test') });
+
+// グローバルテスト設定
+jest.setTimeout(30000);
+
+// 型安全なグローバル設定
+declare global {
+  var testUtils: typeof testUtils;
+  var errorCapture: ReturnType<typeof createErrorCapture>;
+  var mockWebCrypto: ReturnType<typeof createWebCryptoMocks>;
+}
+
+// Console のモック（ノイズ削減）
+const originalConsole = global.console;
 global.console = {
   ...console,
-  // Override console methods to reduce noise in tests
-  log: jestGlobal.fn(),
-  debug: jestGlobal.fn(),
-  info: jestGlobal.fn(),
-  warn: console.warn, // Keep warnings
-  error: console.error, // Keep errors
+  log: jest.fn(),
+  debug: jest.fn(),
+  info: process.env.DEBUG_TESTS === 'true' ? originalConsole.info : jest.fn(),
+  warn: originalConsole.warn, // 警告は保持
+  error: originalConsole.error, // エラーは保持
 };
 
-// Mock環境変数
-process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = 'postgresql://test_user:test_password@localhost:5432/chronopost_test';
-process.env.CLIENT_ID = 'https://test.example.com/.well-known/bluesky-oauth.json';
-process.env.CLIENT_SECRET = 'test-client-secret';
-process.env.ENCRYPTION_KEY = 'test-encryption-key-32-character';
-process.env.FRONTEND_URL = 'http://localhost:3000';
-
-// Global test timeout
-jestGlobal.setTimeout(30000);
-
-// OAuth/DPoP テスト用のモック
+// WebCrypto API の高度なモック
+global.mockWebCrypto = createWebCryptoMocks();
 global.crypto = {
   ...global.crypto,
-  randomUUID: jestGlobal.fn(() => 'test-uuid-' + Math.random().toString(36).substr(2, 9)),
-  subtle: {
-    generateKey: jestGlobal.fn(),
-    exportKey: jestGlobal.fn(),
-    sign: jestGlobal.fn(),
-    verify: jestGlobal.fn(),
-  },
+  randomUUID: jest.fn(() => `test-uuid-${Math.random().toString(36).substr(2, 9)}`),
+  getRandomValues: jest.fn((array) => {
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 256);
+    }
+    return array;
+  }),
+  subtle: global.mockWebCrypto,
 };
 
-// Date モックのヘルパー
-global.mockDate = (date) => {
-  const mockDate = new Date(date);
-  jestGlobal.spyOn(global, 'Date').mockImplementation(() => mockDate);
-  Date.now = jestGlobal.fn(() => mockDate.getTime());
-  return mockDate;
-};
+// テストユーティリティをグローバルに設定
+global.testUtils = testUtils;
 
-// Date モックのリセット
-global.resetDateMock = () => {
-  jestGlobal.spyOn(global, 'Date').mockRestore();
-  Date.now = jestGlobal.fn(() => new Date().getTime());
-};
+// エラーキャプチャをグローバルに設定
+global.errorCapture = createErrorCapture();
 
-// テスト用のユーティリティ関数
-global.testUtils = {
-  // OAuth テスト用のモックデータ
-  mockOAuthCode: 'test-oauth-code-12345',
-  mockAccessToken: 'test-access-token-67890',
-  mockRefreshToken: 'test-refresh-token-abcde',
-  mockDID: 'did:plc:test123456789',
-  mockHandle: 'testuser.bsky.social',
-  
-  // DPoP テスト用のモックキーペア
-  mockDPoPKeyPair: {
-    privateKey: 'mock-private-key-data',
-    publicKey: 'mock-public-key-data',
-  },
-  
-  // テスト用投稿データ
-  mockPost: {
-    content: 'テスト投稿です',
-    scheduledAt: new Date('2025-01-01T12:00:00Z'),
-  },
-  
-  // エラーテスト用のヘルパー
-  createMockError: (message, code = 'TEST_ERROR') => {
-    const error = new Error(message);
-    error.code = code;
-    return error;
-  },
-};
+// Fetch API のモック（OAuth/API呼び出し用）
+global.fetch = jest.fn();
 
-// エラーハンドリングのテスト用
-global.suppressConsoleError = () => {
-  const originalError = console.error;
-  console.error = jestGlobal.fn();
-  return () => {
-    console.error = originalError;
-  };
-};
+// Node.js固有のグローバル設定
+if (typeof global.TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('util');
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+}
 
-// 非同期テストのヘルパー
-global.waitFor = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+// Buffer のポリフィル（ブラウザ環境テスト用）
+if (typeof global.Buffer === 'undefined') {
+  global.Buffer = require('buffer').Buffer;
+}
 
-// テスト前後のクリーンアップ
+// WebIDL URL API のモック
+if (typeof global.URL === 'undefined') {
+  global.URL = require('url').URL;
+}
+
+// テスト前後のセットアップ
 beforeEach(() => {
+  // Jest モックのクリア
+  jest.clearAllMocks();
+  
+  // カスタムモックのリセット
+  if (global.mockWebCrypto) {
+    Object.values(global.mockWebCrypto).forEach(mock => {
+      if (typeof mock === 'function' && 'mockClear' in mock) {
+        mock.mockClear();
+      }
+    });
+  }
+  
+  // エラーキャプチャのクリア
+  if (global.errorCapture) {
+    global.errorCapture.clearErrors();
+  }
+  
+  // 日付モックのリセット
+  if (global.testUtils.resetDateMock) {
+    global.testUtils.resetDateMock();
+  }
+  
+  // Fetch モックのリセット
+  if (global.fetch && 'mockClear' in global.fetch) {
+    (global.fetch as jest.MockedFunction<typeof fetch>).mockClear();
+  }
+  
   // ローカルストレージのクリア（ブラウザ環境テスト用）
   if (typeof localStorage !== 'undefined') {
     localStorage.clear();
@@ -104,32 +109,70 @@ beforeEach(() => {
   if (typeof sessionStorage !== 'undefined') {
     sessionStorage.clear();
   }
-  
-  // Jestモックのクリア
-  jestGlobal.clearAllMocks();
 });
 
 afterEach(() => {
-  // 日付モックのリセット
-  if (Date.now.mockRestore) {
-    Date.now.mockRestore();
-  }
+  // すべてのモックを復元
+  jest.restoreAllMocks();
   
-  // その他のグローバルモックのリセット
-  jestGlobal.restoreAllMocks();
+  // エラーキャプチャを停止
+  if (global.errorCapture) {
+    global.errorCapture.stopCapture();
+  }
 });
 
 // 長時間実行テスト用の設定
 if (process.env.LONG_RUNNING_TESTS === 'true') {
-  jestGlobal.setTimeout(60000); // 1分
+  jest.setTimeout(60000); // 1分
 }
 
-// デバッグモード
+// アンハンドル拒否の警告を抑制（テスト用）
+process.on('unhandledRejection', (reason, promise) => {
+  if (process.env.DEBUG_TESTS === 'true') {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  }
+});
+
+// 環境変数のバリデーション
+const requiredEnvVars = [
+  'DATABASE_URL',
+  'CLIENT_ID',
+  'ENCRYPTION_KEY',
+];
+
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingEnvVars.length > 0) {
+  console.warn(`Warning: Missing test environment variables: ${missingEnvVars.join(', ')}`);
+  console.warn('Some tests may fail. Check packages/backend/.env.test');
+}
+
+// テスト環境の確認
+if (process.env.NODE_ENV !== 'test') {
+  console.warn('Warning: NODE_ENV is not set to "test". This may cause issues.');
+}
+
+// データベースURLがテスト用かチェック
+if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('test')) {
+  console.error('ERROR: DATABASE_URL does not appear to be a test database!');
+  console.error('Current DATABASE_URL:', process.env.DATABASE_URL);
+  console.error('Test databases should contain "test" in the name for safety.');
+  process.exit(1);
+}
+
+// テストの開始ログ
+console.log('🧪 Jest test environment initialized for Chronopost');
+console.log(`📦 Test database: ${process.env.DATABASE_URL?.replace(/\/\/.*@/, '//***@')}`);
+console.log(`🔒 Security: ${process.env.ENCRYPTION_KEY ? 'Mock encryption key loaded' : 'No encryption key'}`);
+console.log(`🌐 OAuth Client: ${process.env.CLIENT_ID}`);
+console.log(`🐛 Debug mode: ${process.env.DEBUG_TESTS === 'true' ? 'ON' : 'OFF'}`);
+
+// TypeScript型エラーの確認用（開発時のみ）
 if (process.env.DEBUG_TESTS === 'true') {
-  // デバッグ時はconsole.logを有効化
-  global.console.log = console.log;
-  global.console.debug = console.debug;
-  global.console.info = console.info;
+  // TypeScriptコンパイラのチェック
+  try {
+    require('typescript');
+    console.log('✅ TypeScript compiler is available');
+  } catch {
+    console.warn('⚠️ TypeScript compiler not found - some type checking may be skipped');
+  }
 }
-
-console.log('Jest setup completed for Chronopost tests');

@@ -101,6 +101,8 @@ export default [
       
       // 暗号化関連
       'no-bitwise': 'warn', // 暗号化で使用する場合のみ許可
+      // ファイルシステムセキュリティ
+      'no-path-concat': 'error',
     },
   },
   
