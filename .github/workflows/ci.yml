@@ -263,7 +263,7 @@ jobs:
 
     environment:
       name: staging
-      url: https://staging.bluesky-scheduler.example.com
+      url: https://staging.chronopost.example.com
 
     steps:
       - name: Checkout code
@@ -295,7 +295,7 @@ jobs:
           sleep 30 # Wait for deployment
           pnpm run test:e2e:staging
         env:
-          STAGING_URL: https://staging.bluesky-scheduler.example.com
+          STAGING_URL: https://staging.chronopost.example.com
 
       - name: Notify staging deployment
         uses: sarisia/actions-status-discord@v1
@@ -306,7 +306,7 @@ jobs:
           title: "🚧 ステージング環境デプロイ"
           description: "Chronopost のステージング環境デプロイが完了しました"
           color: ${{ job.status == 'success' && 0x00ffff || 0xff8800 }}
-          url: https://staging.bluesky-scheduler.example.com
+          url: https://staging.chronopost.example.com
 
   # Deploy to production (on main branch)
   deploy-production:
@@ -317,7 +317,7 @@ jobs:
 
     environment:
       name: production
-      url: https://bluesky-scheduler.example.com
+      url: https://chronopost.example.com
 
     steps:
       - name: Checkout code
@@ -348,7 +348,7 @@ jobs:
       - name: Run post-deployment health check
         run: |
           sleep 60 # Wait for deployment
-          curl -f https://bluesky-scheduler.example.com/health || exit 1
+          curl -f https://chronopost.example.com/health || exit 1
 
       - name: Notify deployment success
         uses: sarisia/actions-status-discord@v1
@@ -359,7 +359,7 @@ jobs:
           title: "🚀 本番環境デプロイ成功"
           description: "Chronopost の本番環境デプロイが正常に完了しました"
           color: 0x00ff00
-          url: https://bluesky-scheduler.example.com
+          url: https://chronopost.example.com
 
       - name: Notify deployment failure
         uses: sarisia/actions-status-discord@v1

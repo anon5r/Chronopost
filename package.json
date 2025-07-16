@@ -1,7 +1,7 @@
 {
   "name": "chronopost",
   "version": "1.0.0",
-  "description": "Bluesky予約投稿システム - OAuth認証とDPoP対応",
+  "description": "Bluesky予約投稿システム",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -95,17 +95,17 @@
   ],
   "author": {
     "name": "Chronopost Team",
-    "email": "dev@bluesky-scheduler.example.com"
+    "email": "dev@chronopost.example.com"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/bluesky-scheduler.git"
+    "url": "https://github.com/anon5r/Chronopost.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/bluesky-scheduler/issues"
+    "url": "https://github.com/anon5r/Chronopost/issues"
   },
-  "homepage": "https://github.com/your-username/bluesky-scheduler#readme",
+  "homepage": "https://github.com/anon5r/Chronopost#readme",
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
       "eslint --fix",

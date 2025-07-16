@@ -17,7 +17,7 @@ global.console = {
 
 // Mock環境変数
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = 'postgresql://test_user:test_password@localhost:5432/bluesky_scheduler_test';
+process.env.DATABASE_URL = 'postgresql://test_user:test_password@localhost:5432/chronopost_test';
 process.env.CLIENT_ID = 'https://test.example.com/.well-known/bluesky-oauth.json';
 process.env.CLIENT_SECRET = 'test-client-secret';
 process.env.ENCRYPTION_KEY = 'test-encryption-key-32-character';

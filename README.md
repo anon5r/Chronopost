@@ -4,7 +4,10 @@ Blueskyで予約投稿を実現するウェブアプリケーション
 
 ## 概要
 
-このプロジェクトは、Bluesky（AT Protocol）のOAuth認証を使用して、ユーザーが指定した日時に自動投稿を行う予約投稿システムです。
+このプロジェクトは、Bluesky（AT Protocol）を使用して、ユーザーが指定した日時に自動投稿を行う予約投稿システムです。
+
+指定した時間に投稿を自動的に実行し、ユーザーが手動で投稿する手間を省きます。BlueskyのOAuth認証を利用し、セキュアな環境での運用を目指します。
+定期的な繰り返し投稿はサポートされません。
 
 ### 主な機能
 
@@ -55,7 +58,7 @@ Blueskyで予約投稿を実現するウェブアプリケーション
 ## プロジェクト構成
 
 ```
-bluesky-scheduler/
+Chronopost/
 ├── packages/
 │   ├── backend/          # API サーバー・スケジューラー
 │   ├── frontend/         # ウェブUI
@@ -77,7 +80,10 @@ bluesky-scheduler/
 | Phase 3 | 3-4週間 | 画像・リンクカード・メンション | 📋 計画中 |
 | Phase 4 | 4-6週間 | 動画・分析・有料機能 | 🔮 将来計画 |
 
-詳細な設計については、[データ構造設計](./docs/datastructure.md)と[ワークフロー設計](./docs/workflow.md)を参照してください。
+詳細な設計については、以下のドキュメントを参照してください：
+- [データ構造設計](./docs/datastructure.md)
+- [ワークフロー設計](./docs/workflow.md)
+- [GitHub Actions CI/CD](./docs/github-actions.md)
 
 ## 開発環境セットアップ
 
@@ -92,8 +98,8 @@ bluesky-scheduler/
 
 ```bash
 # リポジトリクローン
-git clone <repository-url>
-cd bluesky-scheduler
+git clone https://github.com/anon5r/Chronopost.git
+cd Chronopost
 
 # 依存関係インストール
 pnpm install
@@ -118,7 +124,7 @@ pnpm dev
 
 ```bash
 # データベース
-DATABASE_URL="postgresql://dev:dev123@localhost:5432/bluesky_scheduler"
+DATABASE_URL="postgresql://dev:dev123@localhost:5432/chronopost"
 
 # OAuth設定
 CLIENT_ID="https://your-domain.com/.well-known/bluesky-oauth.json"
@@ -218,13 +224,13 @@ pnpm start
 
 ```bash
 # イメージビルド
-docker build -t bluesky-scheduler-backend packages/backend
+docker build -t chronopost-backend packages/backend
 
 # コンテナ実行
 docker run -p 3000:3000 \
   -e DATABASE_URL="..." \
   -e CLIENT_ID="..." \
-  bluesky-scheduler-backend
+  chronopost-backend
 ```
 
 ## 運用
